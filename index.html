@@ -1,0 +1,2470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>27届校招工作台</title>
+<!-- 本工作台 v8：支持 Supabase 云端同步（多设备实时协作）。
+     云端配置已内置（Supabase 项目 + anon key，纯 REST 调用，无 SDK 依赖）；连接失败时自动降级为 localStorage 离线模式。
+     同步策略：岗位级合并（按 _ut 时间戳，最新修改优先）+ 墓碑删除；简历/定制稿以云端为准。
+     API Key 仅存各设备本地，不上传云端。数据请定期「导出备份」。 -->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+    background: #F4F6FA; color: #1F2329; font-size: 15px; line-height: 1.6;
+  }
+  .container { max-width: 1080px; margin: 0 auto; padding: 16px 16px 96px; }
+  .card { background: #fff; border-radius: 14px; padding: 16px; box-shadow: 0 1px 3px rgba(31,35,41,.06); margin-bottom: 14px; }
+
+  header.topbar { background: #fff; border-radius: 14px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(31,35,41,.06); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-right: auto; }
+  .brand .logo { width: 36px; height: 36px; border-radius: 10px; background: #2F54EB; display: flex; align-items: center; justify-content: center; flex: none; }
+  .brand .logo svg { width: 20px; height: 20px; }
+  .brand h1 { font-size: 17px; font-weight: 600; }
+  .brand .sub { font-size: 12px; color: #8A9099; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border: 1px solid #E3E6EB; background: #fff; color: #1F2329;
+    border-radius: 10px; padding: 8px 12px; font-size: 13px; cursor: pointer;
+    min-height: 38px; text-decoration: none; transition: background .15s;
+    font-family: inherit;
+  }
+  .btn:hover { background: #F4F6FA; }
+  .btn svg { width: 15px; height: 15px; flex: none; }
+  .btn.primary { background: #2F54EB; border-color: #2F54EB; color: #fff; }
+  .btn.primary:hover { background: #1D39C4; }
+  .btn.danger { color: #D93025; border-color: #F3C2BF; }
+  .btn.danger:hover { background: #FDF1F0; }
+  .btn.sm { min-height: 32px; padding: 4px 10px; font-size: 12px; border-radius: 8px; }
+
+  nav.tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+  nav.tabs button {
+    flex: 1; border: none; background: #fff; border-radius: 12px; padding: 12px 8px;
+    font-size: 14px; color: #5A6068; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px;
+    box-shadow: 0 1px 3px rgba(31,35,41,.06); min-height: 48px; font-family: inherit;
+  }
+  nav.tabs button svg { width: 17px; height: 17px; }
+  nav.tabs button.active { background: #2F54EB; color: #fff; font-weight: 600; }
+  nav.tabs button .count { background: #EEF1FE; color: #2F54EB; border-radius: 999px; font-size: 11px; padding: 1px 7px; font-weight: 600; }
+  nav.tabs button.active .count { background: rgba(255,255,255,.25); color: #fff; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .section-title { font-size: 15px; font-weight: 600; margin: 18px 0 10px; display: flex; align-items: center; gap: 8px; }
+  .section-title:first-child { margin-top: 0; }
+  .section-title .num { font-size: 12px; color: #8A9099; font-weight: 400; }
+  .badge { display: inline-flex; align-items: center; border-radius: 6px; font-size: 12px; padding: 1px 8px; font-weight: 500; white-space: nowrap; }
+  .empty { text-align: center; color: #8A9099; padding: 28px 12px; font-size: 14px; }
+  .item-row {
+    display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px;
+    background: #fff; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(31,35,41,.05); flex-wrap: wrap;
+  }
+  .item-row .main { flex: 1; min-width: 200px; }
+  .item-row .co { font-size: 14px; font-weight: 600; }
+  .item-row .pos { font-size: 13px; color: #5A6068; }
+  .item-row .meta { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; align-items: center; }
+  .item-row .btn { min-height: 36px; }
+  .item-row.overdue { border-left: 4px solid #D93025; background: #FDF6F5; }
+  .chip { font-size: 12px; border-radius: 6px; padding: 1px 8px; background: #F1F3F5; color: #5A6068; }
+  .chip.red { background: #FDECEC; color: #D93025; font-weight: 600; }
+  .chip.amber { background: #FFF4E0; color: #B25E09; }
+  .chip.blue { background: #EBF1FF; color: #2F54EB; }
+  .chip.green { background: #E8F5E9; color: #16A34A; }
+  .chip.gray { background: #F1F3F5; color: #8A9099; text-decoration: line-through; }
+  .link-btn { color: #2F54EB; text-decoration: none; font-size: 13px; display: inline-flex; align-items: center; gap: 3px; min-height: 32px; }
+  .link-btn svg { width: 13px; height: 13px; }
+  .note { font-size: 12px; color: #B25E09; margin-top: 3px; }
+
+  .banner { border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; font-size: 13px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .banner.warn { background: #FFF8E6; color: #8A5A00; }
+  .banner.info { background: #EBF1FF; color: #1D39C4; }
+  .banner .btn { margin-left: auto; }
+  .banner.err { background: #FDF1F0; color: #A32D2D; }
+
+  /* ===== 笔试状态聚焦卡（首页一眼可见） ===== */
+  .exam-overview { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .exam-col { background: #fff; border-radius: 14px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(31,35,41,.06); border-top: 3px solid; min-width: 0; }
+  .exam-col.pending { border-top-color: #B25E09; background: #FFFAF2; }
+  .exam-col.done { border-top-color: #0891B2; background: #F0F9FB; }
+  .exam-col-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 14px; font-weight: 700; }
+  .exam-col-head.pending { color: #8A5A00; }
+  .exam-col-head.done { color: #065F73; }
+  .exam-col-head .ico { width: 18px; height: 18px; flex: none; display: inline-flex; align-items: center; justify-content: center; }
+  .exam-col-head .ico svg { width: 18px; height: 18px; }
+  .exam-col-head .cnt { margin-left: auto; background: rgba(0,0,0,.08); padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+  .exam-list { display: flex; flex-direction: column; gap: 8px; }
+  .exam-item { background: #fff; border-radius: 10px; padding: 10px 12px; border: 1px solid #EEF0F3; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .exam-item .main { flex: 1 1 200px; min-width: 160px; }
+  .exam-item .co { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+  .exam-item .pos { font-size: 12px; color: #5A6068; margin-top: 2px; }
+  .exam-item .pos .link { color: #2F54EB; text-decoration: none; margin-left: 4px; font-size: 11px; }
+  .exam-item .meta { font-size: 12px; color: #5A6068; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .exam-item .meta .chip { padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+  .exam-item .meta .date { color: #B25E09; font-weight: 500; }
+  .exam-item .meta .empty { color: #A32D2D; font-weight: 500; }
+  .exam-item .meta .soon { color: #A32D2D; font-weight: 700; }
+  .exam-item .meta .hint { color: #8A9099; }
+  .exam-item .ops { display: flex; gap: 6px; flex-wrap: wrap; }
+  .exam-empty { font-size: 13px; color: #8A9099; padding: 10px 4px; text-align: center; }
+  @media (max-width: 768px) {
+    .exam-overview { grid-template-columns: 1fr; }
+    .exam-col { padding: 12px 14px; }
+    .exam-item .main { flex-basis: 100%; }
+  }
+
+  .cloud-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+  .cloud-chip .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .cloud-chip.ok { background: #E8F5E9; color: #16794A; }
+  .cloud-chip.ok .dot { background: #16A34A; }
+  .cloud-chip.sync { background: #EBF1FF; color: #2F54EB; }
+  .cloud-chip.sync .dot { background: #2F54EB; }
+  .cloud-chip.err { background: #FDF1F0; color: #A32D2D; }
+  .cloud-chip.err .dot { background: #D93025; }
+  .cloud-chip.off { background: #F1F3F5; color: #8A9099; }
+  .cloud-chip.off .dot { background: #8A9099; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .stat { background: #fff; border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(31,35,41,.05); }
+  .stat .v { font-size: 22px; font-weight: 700; }
+  .stat .l { font-size: 12px; color: #8A9099; }
+  .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; font-size: 13px; }
+  .bar-row .bl { width: 64px; color: #5A6068; flex: none; }
+  .bar-row .bar { height: 10px; border-radius: 5px; background: #F1F3F5; flex: 1; overflow: hidden; }
+  .bar-row .bar i { display: block; height: 100%; border-radius: 5px; }
+  .bar-row .bv { width: 28px; text-align: right; color: #1F2329; flex: none; font-weight: 600; }
+
+  .filters { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .filters input[type="text"], .filters select {
+    border: 1px solid #E3E6EB; border-radius: 10px; padding: 9px 12px; font-size: 16px; background: #fff; min-height: 44px; font-family: inherit;
+  }
+  .filters input[type="text"] { flex: 1; min-width: 180px; }
+
+  /* ===== 看板重设计 v11：Pipeline + Tab + 卡片 inline ===== */
+  /* Pipeline 横向流程条 */
+  .pipeline { display: flex; gap: 4px; align-items: stretch; background: #fff; border-radius: 14px; padding: 12px 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(31,35,41,.06); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .pipeline::-webkit-scrollbar { height: 4px; }
+  .pipeline::-webkit-scrollbar-thumb { background: #D0D5DD; border-radius: 2px; }
+  .pipeline-node { flex: 1 1 0; min-width: 64px; background: #F4F6FA; border: 1px solid transparent; border-radius: 10px; padding: 8px 4px; text-align: center; cursor: pointer; transition: all .15s; position: relative; }
+  .pipeline-node:hover { background: #E8F0FE; }
+  .pipeline-node.active { background: #EEF1FE; border-color: #2F54EB; box-shadow: 0 0 0 1px #2F54EB inset; }
+  .pipeline-node .n { font-size: 18px; font-weight: 700; line-height: 1.2; color: #1F2329; }
+  .pipeline-node.empty .n { color: #C9CDD4; }
+  .pipeline-node .l { font-size: 10px; color: #5A6068; margin-top: 2px; line-height: 1.2; white-space: nowrap; }
+  .pipeline-node .bar { position: absolute; left: 8px; right: 8px; bottom: 0; height: 3px; border-radius: 0 0 10px 10px; background: var(--node-color, #C9CDD4); }
+  .pipeline-arrow { display: flex; align-items: center; color: #C9CDD4; font-size: 14px; padding: 0 1px; flex: none; }
+  /* Tab 切换条（横向滚动） */
+  .board-tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+  .board-tabs::-webkit-scrollbar { height: 3px; }
+  .board-tabs::-webkit-scrollbar-thumb { background: #D0D5DD; border-radius: 2px; }
+  .board-tab { flex: none; padding: 7px 12px; border-radius: 999px; background: #F1F3F5; color: #5A6068; border: 1px solid transparent; cursor: pointer; font-size: 13px; white-space: nowrap; min-height: 36px; display: inline-flex; align-items: center; gap: 6px; }
+  .board-tab:hover { background: #E8ECEF; }
+  .board-tab.active { background: #2F54EB; color: #fff; font-weight: 600; }
+  .board-tab .cnt { background: rgba(0,0,0,.06); padding: 0 7px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .board-tab.active .cnt { background: rgba(255,255,255,.25); }
+  /* 内容区 */
+  .board-content { background: transparent; }
+  .board-empty { padding: 40px 20px; text-align: center; color: #8A9099; font-size: 14px; background: #fff; border-radius: 12px; }
+  /* 公司分组（每个 Tab 内部） */
+  .co-group { margin-bottom: 14px; }
+  .co-group-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 13px; font-weight: 600; color: #1F2329; background: #fff; border-radius: 10px 10px 0 0; border-bottom: 1px solid #EEF0F3; }
+  .co-group-head .co-name { font-size: 14px; }
+  .co-group-head .co-cnt { color: #8A9099; font-weight: 400; font-size: 12px; }
+  .co-group-head .co-meta { margin-left: auto; font-size: 12px; color: #8A9099; }
+  .co-group-head .co-meta .chip { margin-right: 4px; }
+  .co-group-cards { background: #fff; border-radius: 0 0 10px 10px; padding: 8px; }
+  /* v11 卡片（更紧凑，含 inline 状态徽章+备注） */
+  .job-card { background: #fff; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; box-shadow: 0 1px 2px rgba(31,35,41,.06); border-left: 3px solid transparent; }
+  .job-card.hot { border-left-color: #D93025; }
+  .job-card.stale { border-left-color: #F0997B; background: #FFF8F4; }
+  .job-card.terminated { opacity: .68; border-left-color: #DC2626; }
+  .job-card .head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+  .job-card .co { font-size: 14px; font-weight: 600; }
+  .job-card .pos { font-size: 12px; color: #5A6068; margin-bottom: 6px; }
+  .job-card .status-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 2px 8px; border-radius: 999px; cursor: pointer; user-select: none; border: 1px solid transparent; transition: all .12s; }
+  .job-card .status-badge:hover { background: #EEF1FE; border-color: #2F54EB; }
+  .job-card .status-badge .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+  .job-card .status-badge .caret { font-size: 9px; opacity: .5; }
+  /* 状态徽章下拉 */
+  .status-dropdown { position: absolute; z-index: 100; background: #fff; border-radius: 10px; box-shadow: 0 8px 28px rgba(31,35,41,.18); padding: 6px 0; min-width: 140px; max-height: 320px; overflow-y: auto; }
+  .status-dropdown .opt { padding: 8px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .status-dropdown .opt:hover { background: #F4F6FA; }
+  .status-dropdown .opt .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .status-dropdown .opt.current { background: #EEF1FE; color: #2F54EB; font-weight: 600; }
+  /* inline 备注编辑 */
+  .job-card .note-inline { font-size: 12px; color: #5A6068; margin-top: 6px; padding: 4px 8px; background: #FAFBFC; border-radius: 6px; min-height: 22px; cursor: text; word-break: break-word; }
+  .job-card .note-inline:hover { background: #F4F6FA; }
+  .job-card .note-inline.editing { background: #FFFBE6; border: 1px solid #FFD666; padding: 3px 7px; }
+  .job-card .note-inline.empty { color: #B0B5BD; font-style: italic; }
+  .job-card .note-input { width: 100%; border: none; background: transparent; outline: none; font-size: 12px; font-family: inherit; color: #1F2329; resize: none; min-height: 18px; }
+  /* 卡片底部操作 */
+  .job-card .foot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .job-card .foot .spacer { flex: 1; }
+  .job-card .icon-btn { width: 30px; height: 30px; border: 1px solid #E3E6EB; background: #fff; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+  .job-card .icon-btn:hover { background: #F4F6FA; }
+  .job-card .icon-btn svg { width: 14px; height: 14px; }
+  .job-card .text-btn { font-size: 12px; padding: 4px 10px; border: 1px solid #E3E6EB; background: #fff; border-radius: 6px; cursor: pointer; min-height: 30px; }
+  .job-card .text-btn:hover { background: #F4F6FA; }
+  .job-card .text-btn.primary { background: #2F54EB; color: #fff; border-color: #2F54EB; }
+  .job-card .text-btn.primary:hover { background: #1D39C4; }
+  .job-card .text-btn.danger { color: #DC2626; border-color: #FCA5A5; }
+  .job-card .text-btn.danger:hover { background: #FEF2F2; }
+  .job-card .days { font-size: 11px; color: #A32D2D; margin-top: 4px; }
+  .job-card .follow-actions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #EEF0F3; }
+  /* 总览页特殊样式：每个状态一张 mini 卡 */
+  .overview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .ov-stage { background: #fff; border-radius: 12px; padding: 12px; border-top: 3px solid var(--stage-color, #C9CDD4); box-shadow: 0 1px 2px rgba(31,35,41,.06); cursor: pointer; transition: transform .15s, box-shadow .15s, border-color .15s; }
+  .ov-stage:not(.empty):hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(31,35,41,.12); border-top-color: #2F54EB; }
+  .ov-stage.empty { opacity: .5; cursor: default; }
+  .ov-stage h4 { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #1F2329; }
+  .ov-stage h4 .to-arrow { margin-left: auto; color: #C9CDD4; transition: transform .15s, color .15s; }
+  .ov-stage:hover h4 .to-arrow { color: #2F54EB; transform: translateX(2px); }
+  .ov-stage h4 .cnt { margin-left: auto; background: #F4F6FA; color: #5A6068; padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+  .ov-stage .mini { padding: 6px 8px; border-bottom: 1px dashed #EEF0F3; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+  .ov-stage .mini:last-child { border-bottom: none; }
+  .ov-stage .mini .co { font-weight: 500; }
+  .ov-stage .mini .pos { color: #8A9099; font-size: 11px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ov-stage .mini .stale-tag { color: #A32D2D; font-size: 10px; flex: none; }
+  .ov-stage .mini .soon-tag { background: #FEF2F2; color: #DC2626; padding: 0 4px; border-radius: 4px; font-size: 10px; flex: none; }
+  .ov-stage .more { font-size: 11px; color: #8A9099; padding: 4px 8px; cursor: pointer; }
+  .ov-stage .more:hover { color: #2F54EB; }
+
+  @media (max-width: 768px) {
+    .pipeline-node { min-width: 56px; padding: 6px 2px; }
+    .pipeline-node .n { font-size: 16px; }
+    .pipeline-node .l { font-size: 9px; }
+    .board-tab { padding: 6px 10px; font-size: 12px; }
+    .job-card .icon-btn { width: 38px; height: 38px; }
+    .job-card .icon-btn svg { width: 16px; height: 16px; }
+    .ov-stage { padding: 10px; }
+  }
+  .follow-detail { display: none; margin-bottom: 12px; }
+  .follow-detail.open { display: block; }
+  /* 公司总览 */
+  .co-card { background: #fff; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(31,35,41,.05); }
+  .co-card .head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .co-card .name { font-size: 15px; font-weight: 700; }
+  .co-card .cnt { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; align-items: center; }
+  .co-card .pos-list { margin-top: 10px; display: none; }
+  .co-card.open .pos-list { display: block; }
+  .co-card .pos-row { display: flex; gap: 8px; align-items: flex-start; padding: 9px 0; border-top: 1px dashed #EEF0F3; }
+  .co-card .pos-row:first-child { border-top: none; }
+  .co-card .pos-row .main { flex: 1; min-width: 180px; }
+  .co-card .pos-row .meta { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; align-items: center; }
+  .star-btn { width: 32px; height: 32px; border: 1px solid #E3E6EB; background: #fff; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .star-btn svg { width: 15px; height: 15px; }
+  .star-btn:hover { background: #F4F6FA; }
+  .co-card .pos-row .icon-btn { width: 32px; height: 32px; border: 1px solid #E3E6EB; background: #fff; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .co-card .pos-row .icon-btn svg { width: 15px; height: 15px; }
+  .co-card .pos-row .icon-btn:hover { background: #F4F6FA; }
+  .fetch-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid #E3E6EB; border-radius: 10px; margin-bottom: 8px; background: #fff; flex-wrap: wrap; }
+  .fetch-item input[type="checkbox"] { width: 18px; height: 18px; margin-top: 3px; flex: none; }
+  .fetch-status { font-size: 12px; color: #8A9099; margin-top: 8px; line-height: 1.6; }
+  .ai-status { font-size: 12px; color: #8A9099; margin-top: 8px; line-height: 1.6; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(31,35,41,.45); display: none; z-index: 50; padding: 20px; overflow-y: auto; }
+  .overlay.show { display: flex; align-items: flex-start; justify-content: center; }
+  .modal { background: #fff; border-radius: 16px; padding: 20px; width: 100%; max-width: 560px; margin: auto 0; }
+  .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 14px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { font-size: 12px; color: #5A6068; }
+  .field input, .field select, .field textarea {
+    border: 1px solid #E3E6EB; border-radius: 10px; padding: 10px 12px; font-size: 16px; font-family: inherit; width: 100%;
+  }
+  .field textarea { resize: vertical; min-height: 76px; }
+  .field .hint { font-size: 11px; color: #8A9099; }
+  .modal .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+
+  textarea.big { width: 100%; min-height: 220px; border: 1px solid #E3E6EB; border-radius: 10px; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical; line-height: 1.7; }
+  textarea.mid { width: 100%; min-height: 140px; border: 1px solid #E3E6EB; border-radius: 10px; padding: 12px; font-size: 14px; font-family: inherit; resize: vertical; line-height: 1.7; }
+  .score-bar { height: 8px; border-radius: 4px; background: #F1F3F5; overflow: hidden; flex: 1; min-width: 80px; }
+  .score-bar i { display: block; height: 100%; border-radius: 4px; background: #2F54EB; }
+  .match-row { padding: 12px 0; border-bottom: 1px solid #F1F3F5; }
+  .match-row:last-child { border-bottom: none; }
+  .match-row .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .match-row .pct { font-size: 13px; font-weight: 700; color: #2F54EB; width: 44px; text-align: right; }
+  .kw-wrap { margin-top: 6px; display: flex; gap: 5px; flex-wrap: wrap; }
+  pre.suggest { background: #F7F9FC; border: 1px solid #E3E6EB; border-radius: 10px; padding: 12px; font-size: 12px; white-space: pre-wrap; word-break: break-all; font-family: inherit; max-height: 260px; overflow-y: auto; }
+
+  @media (max-width: 768px) {
+    .container { padding: 12px 12px 110px; }
+    nav.tabs { position: fixed; bottom: 0; left: 0; right: 0; margin: 0; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); background: #fff; box-shadow: 0 -2px 10px rgba(31,35,41,.08); gap: 4px; display: flex; }
+    nav.tabs button { flex-direction: column; gap: 2px; font-size: 11px; padding: 6px 2px; min-height: 52px; border-radius: 10px; box-shadow: none; background: transparent; }
+    nav.tabs button.active { background: #EEF1FE; color: #2F54EB; }
+    .kanban { display: block; }
+    .form-grid { grid-template-columns: 1fr; }
+    .btn .txt { display: none; }
+    .btn { padding: 8px 10px; }
+    .item-row .btn { min-height: 40px; }
+    .kb-card .icon-btn { width: 42px; height: 42px; }
+    .co-card .pos-row .icon-btn { width: 42px; height: 42px; }
+    .star-btn { width: 42px; height: 42px; }
+    .link-btn { min-height: 44px; }
+    .banner .btn { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 13.255A23.9 23.9 0 0 1 12 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><rect x="2" y="6" width="20" height="14" rx="2"/></svg>
+      </div>
+      <div>
+        <h1>27届校招工作台</h1>
+        <div class="sub">投递看板 · 岗位库 · 匹配分析 · 简历工坊</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="btnCloudStatus" title="云端同步状态，点击配置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg><span class="txt" id="cloudStatusTxt">云端</span>
+      </button>
+      <button class="btn" id="btnSettingsTop" title="API 设置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="txt">API 设置</span>
+      </button>
+      <button class="btn" id="btnAdd" title="添加岗位">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="txt">添加岗位</span>
+      </button>
+      <button class="btn" id="btnExport" title="导出 JSON 备份">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg><span class="txt">导出备份</span>
+      </button>
+      <button class="btn" id="btnImport" title="导入恢复">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg><span class="txt">导入恢复</span>
+      </button>
+      <button class="btn danger" id="btnClearAll" title="清空全部数据">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6"/></svg><span class="txt">清空全部</span>
+      </button>
+      <input type="file" id="fileImport" accept=".json" style="display:none">
+      <input type="file" id="fileResume" accept=".txt,.md" style="display:none">
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="kanban" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+      看板
+    </button>
+    <button data-tab="company">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6M9 10h.01M12 10h.01M15 10h.01M9 13h.01M12 13h.01M15 13h.01"/></svg>
+      公司
+    </button>
+    <button data-tab="list">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      岗位库
+    </button>
+    <button data-tab="match">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+      匹配分析
+    </button>
+    <button data-tab="resume">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      简历工坊
+    </button>
+  </nav>
+
+  <!-- ===== 投递看板（主页） ===== -->
+  <section class="view active" id="view-kanban">
+    <div id="cloudBanner"></div>
+    <div id="backupHint"></div>
+    <div id="followBanner"></div>
+    <div id="examOverview"></div>
+    <div class="kanban" id="kanban"></div>
+  </section>
+
+  <!-- ===== 公司总览 ===== -->
+  <section class="view" id="view-company">
+    <div class="stats" id="companyStats"></div>
+    <div class="card">
+      <div class="filters">
+        <input type="text" id="coSearch" placeholder="搜索公司">
+        <select id="coSort">
+          <option value="count">按岗位数排序</option>
+          <option value="deadline">按最近截止排序</option>
+          <option value="name">按公司名排序</option>
+        </select>
+      </div>
+      <div class="hint" style="font-size:11px;color:#8A9099;margin:6px 0 10px">每家公司一张卡：投了几个 / 还能投几个 / 意向几个 / 最近截止。点「展开」看旗下全部岗位，星标 = 意向岗位。</div>
+      <div id="companyList"></div>
+    </div>
+  </section>
+
+  <!-- ===== 岗位库 ===== -->
+  <section class="view" id="view-list">
+    <div class="card">
+      <div class="section-title">抓取新岗位 <span class="num">搜索 API + AI 解析，一键入库</span></div>
+      <div class="filters">
+        <input type="text" id="fetchQuery" placeholder="输入关键词，如：2027届 银行 秋招 校园招聘 网申">
+        <button class="btn primary" id="btnFetch" style="min-height:44px">搜索并解析</button>
+        <button class="btn" id="btnOpenSettings">API 设置</button>
+      </div>
+      <div class="fetch-status" id="fetchStatus">首次使用请先点「API 设置」配置搜索服务与 LLM 的 Key。抓取结果均标记「待核实」，截止时间仅在来源明确时填写。</div>
+      <div id="fetchResult"></div>
+    </div>
+    <div class="stats" id="statsCards"></div>
+    <div class="card">
+      <div class="filters">
+        <input type="text" id="searchInput" placeholder="搜索公司 / 岗位 / 标签">
+        <select id="statusFilter"><option>全部状态</option></select>
+        <select id="matchFilter">
+          <option>全部匹配度</option><option>高</option><option>中</option><option>低</option><option>未评</option>
+        </select>
+      </div>
+      <div id="jobList"></div>
+      <div id="statusBars" style="margin-top:14px"></div>
+    </div>
+  </section>
+
+  <!-- ===== 匹配分析 ===== -->
+  <section class="view" id="view-match">
+    <div class="stats" id="matchStats"></div>
+    <div class="card">
+      <div class="section-title">岗位匹配分析 <span class="num">AI 深度标注 + 本地关键词比对</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="btn primary" id="btnAnalyze">刷新关键词匹配</button>
+        <button class="btn" id="btnCopyMatchAsk">复制给 AI 的深度匹配请求</button>
+      </div>
+      <div class="hint" style="font-size:11px;color:#8A9099;margin-bottom:10px;line-height:1.6">岗位库当前已带 AI 深度匹配标注（高/中/低 + 一句话理由）。「刷新关键词匹配」是本地比对，写入会覆盖深度标注，请酌情使用；「深度匹配请求」可粘到 AI 对话获得更准的评估。</div>
+      <div id="analyzeResult"></div>
+    </div>
+  </section>
+
+  <!-- ===== 简历工坊 ===== -->
+  <section class="view" id="view-resume">
+    <div class="card">
+      <div class="section-title">第一步 · 我的简历</div>
+      <div class="field">
+        <label for="resumeText">粘贴简历全文（教育背景 / 实习经历 / 项目 / 技能，越完整匹配越准）</label>
+        <textarea class="big" id="resumeText" placeholder="把你的简历内容粘贴到这里…&#10;&#10;提示：PDF / Word 版简历请先在对话里发给 AI 解析，再把解析出的文本粘贴进来"></textarea>
+        <div class="hint" id="resumeCount" style="margin-top:4px"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn primary" id="btnSaveResume">保存简历</button>
+        <button class="btn" id="btnUploadResume">上传 txt / md 文件</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">第二步 · 针对性简历定制 <span class="num">基于真实经历，不编造</span></div>
+      <div class="field">
+        <label for="tailorSelect">选择要定制的岗位</label>
+        <select id="tailorSelect" style="font-size:16px;padding:10px 12px;border:1px solid #E3E6EB;border-radius:10px;font-family:inherit"></select>
+      </div>
+      <div id="tailorInfo" style="margin-top:10px"></div>
+      <details class="adhoc-wrap" style="margin-top:12px;background:#FAFBFC;border-radius:8px;padding:8px 12px">
+        <summary style="cursor:pointer;font-size:13px;color:#2F54EB">可选 · 临时粘贴一段原简历（覆盖上方保存的版本，留空则用上方保存的）</summary>
+        <div class="field" style="margin-top:8px">
+          <textarea id="adhocResumeText" placeholder="如果你想为这次定制专门用一版不同于「保存简历」的源文，粘在这里；AI 会严格按你的原格式输出，不重排版。" style="min-height:120px;font-size:13px;padding:8px 10px;border:1px solid #E3E6EB;border-radius:8px;width:100%;font-family:inherit"></textarea>
+          <div class="hint" style="font-size:11px;color:#8A9099;margin-top:4px">临时使用，不保存到云端。下次定制会清空（除非你又粘进来）。</div>
+        </div>
+      </details>
+      <div class="field" style="margin-top:12px">
+        <label for="tailorText">该岗位专用简历版本（保存后随时取用）</label>
+        <textarea class="mid" id="tailorText" placeholder="针对这个岗位调整后的简历版本会保存在这里…&#10;&#10;点「AI 一键定制」自动生成（需先配置 API），或点「复制给 AI 的定制请求」粘到对话由 AI 修改"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn primary" id="btnAiTailor">AI 一键定制</button>
+        <button class="btn" id="btnSaveTailor">保存定制版</button>
+        <button class="btn" id="btnGenSuggest">生成定制建议</button>
+        <button class="btn" id="btnCopyPrompt">复制给 AI 的定制请求</button>
+      </div>
+      <div class="ai-status" id="aiTailorStatus"></div>
+      <pre class="suggest" id="suggestBox" style="display:none;margin-top:12px"></pre>
+    </div>
+  </section>
+
+</div>
+
+<!-- ===== 添加/编辑弹层 ===== -->
+<div class="overlay" id="formOverlay">
+  <div class="modal">
+    <h2 id="formTitle">添加岗位</h2>
+    <form id="jobForm">
+      <input type="hidden" id="fId">
+      <div class="field full" style="margin-bottom:10px">
+        <label for="fSmart">智能粘贴：把招聘信息整段粘进来，自动拆出公司 / 岗位 / 链接 / JD</label>
+        <textarea id="fSmart" style="min-height:70px" placeholder="例：&#10;腾讯-产品运营&#10;https://join.qq.com/post_detail.html?postid=xxx&#10;1.负责xx产品的运营…&#10;2.…"></textarea>
+        <button type="button" class="btn sm" id="btnSmartParse" style="margin-top:6px">解析填入</button>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="fCompany">公司名称 *</label>
+          <input type="text" id="fCompany" required>
+        </div>
+        <div class="field">
+          <label for="fPosition">岗位名称 *</label>
+          <input type="text" id="fPosition" required>
+        </div>
+        <div class="field full">
+          <label for="fUrl">投递链接（可点击跳转）</label>
+          <input type="url" id="fUrl" placeholder="https://...">
+        </div>
+        <div class="field">
+          <label for="fDeadline">截止日期</label>
+          <input type="date" id="fDeadline">
+        </div>
+        <div class="field">
+          <label for="fWrittenExamDate">笔试 / 测评时间</label>
+          <input type="date" id="fWrittenExamDate">
+        </div>
+        <div class="field">
+          <label for="fAppliedDate">投递时间（已投递才填）</label>
+          <input type="date" id="fAppliedDate">
+        </div>
+        <div class="field">
+          <label for="fMatch">匹配度</label>
+          <select id="fMatch">
+            <option>未评</option><option>高</option><option>中</option><option>低</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label for="fStatus">当前状态（请如实选择，未投递不要标已投递）</label>
+          <select id="fStatus"></select>
+        </div>
+        <div class="field full" style="display:flex;align-items:center;gap:10px">
+          <input type="checkbox" id="fInterest" style="width:18px;height:18px;cursor:pointer">
+          <label for="fInterest" style="margin:0;cursor:pointer">意向岗位（星标优先投，公司看板单独统计）</label>
+        </div>
+        <div class="field full">
+          <label for="fTags">标签（逗号分隔，如：银行,广州）</label>
+          <input type="text" id="fTags" placeholder="银行,广州">
+        </div>
+        <div class="field full">
+          <label for="fJd">岗位 JD（要求 / 职责 / 备注）</label>
+          <textarea id="fJd" placeholder="粘贴岗位 JD 或自己记的要点"></textarea>
+        </div>
+        <div class="field full">
+          <label for="fNote">备注（投递凭证 / 信息来源，可留空）</label>
+          <input type="text" id="fNote" placeholder="如：官网公告核实 / 8月20日邮件投递">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn" id="btnCancel">取消</button>
+        <button type="submit" class="btn primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== API 设置弹层 ===== -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <h2>API 设置</h2>
+    <div class="section-title" style="margin-top:0">LLM 服务 <span class="num">OpenAI 兼容接口 · 用于 AI 抓取解析与简历定制</span></div>
+    <div class="form-grid">
+      <div class="field">
+        <label for="setLlmUrl">Base URL（已默认阿里云百炼）</label>
+        <input type="text" id="setLlmUrl" placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1">
+      </div>
+      <div class="field">
+        <label for="setLlmModel">模型名（已默认 qwen-plus，省钱可改 qwen-flash）</label>
+        <input type="text" id="setLlmModel" placeholder="qwen-plus">
+      </div>
+      <div class="field full">
+        <label for="setLlmKey">API Key（填你百炼平台的 sk- 开头 Key）</label>
+        <input type="password" id="setLlmKey" placeholder="sk-...">
+      </div>
+    </div>
+    <div class="section-title">搜索服务 <span class="num">用于「抓取新岗位」</span></div>
+    <div class="form-grid">
+      <div class="field">
+        <label for="setSearchProvider">服务商</label>
+        <select id="setSearchProvider">
+          <option value="bocha">博查 Web Search（国内）</option>
+          <option value="tavily">Tavily（国际）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="setSearchKey">API Key</label>
+        <input type="password" id="setSearchKey" placeholder="搜索服务 API Key">
+      </div>
+    </div>
+    <div class="section-title">云端同步 <span class="num">Supabase · 多设备实时同步</span></div>
+    <div class="field full">
+      <label>云端连接（已内置，无需配置）</label>
+      <input type="text" value="https://psvhfgigczykqnzsunpc.supabase.co" readonly style="background:#F4F6FA;color:#5A6068">
+      <div class="hint">岗位数据按条合并（最新修改优先）；简历与定制稿以云端为准。API Key 不会上传。连接失败自动降级为离线模式，本地修改不丢。</div>
+    </div>
+    <div class="hint" style="font-size:11px;color:#8A9099;margin-top:12px;line-height:1.7">
+      <b>云端初始化（一次性，仅首次部署时需要）：</b><br>
+      ① 打开 Supabase 控制台 → 左侧「SQL Editor」→ 粘贴以下语句并 Run：<br>
+      <code style="font-size:10px;background:#F4F6FA;padding:2px 4px;border-radius:4px;display:inline-block">create table if not exists campus27_jobs (id text primary key, data jsonb, ut bigint default 0, deleted boolean default false);<br>alter table campus27_jobs disable row level security;<br>create table if not exists campus27_kv (k text primary key, v jsonb, ut bigint default 0);<br>alter table campus27_kv disable row level security;</code><br>
+      ② 把本页面上传到任意静态托管（如 Supabase Storage / EdgeOne Pages / GitHub Pages），用网址访问，多设备打开即数据互通<br>
+      · Key 仅保存在本机浏览器 localStorage，不会上传到任何服务器<br>
+      · LLM 已按你的阿里云百炼（通义千问）Key 预设好 Base URL 和模型名，只需填入 Key 即可；也兼容 DeepSeek / 智谱 GLM 等 OpenAI 格式服务商<br>
+      · 定制一份简历约消耗几分钱；搜索每次约 0.05 元<br>
+      · 若调用报「网络错误 / Failed to fetch」，多为该服务商不允许浏览器直连（CORS 限制），换一家服务商即可<br>
+      · 把页面分享给亲友时，对方读不到你浏览器里的 Key（本地存储隔离），需各自配置；云端地址已随页面内置，无需重复填
+    </div>
+    <div class="form-actions">
+      <button type="button" class="btn" id="btnCloudSync">立即同步</button>
+      <button type="button" class="btn danger" id="btnCloudDisconnect">断开云端</button>
+      <button type="button" class="btn" id="btnCloseSettings">取消</button>
+      <button type="button" class="btn primary" id="btnSaveSettings">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var STORAGE_KEY = 'wb_campus27_jobs';
+  var META_KEY = 'wb_campus27_meta';
+  var RESUME_KEY = 'wb_campus27_resume';
+  var TAILORED_KEY = 'wb_campus27_tailored';
+  var FOLLOW_UP_DAYS = 7;
+
+  // 大顺序：用于筛选下拉、表单选择、看板 Tab、状态徽章下拉
+  var STATUSES = ['待投递', '已投递', '待笔试', '笔试已完成', '待一面', '一面已完成', '待二面', '二面已完成', '待三面', '三面已完成', '待实习', '实习中', 'Offer', '已终止'];
+  // 推进顺序：advance 按钮按此顺序流转（不含「待X」和「已终止」；待实习/实习中 为转正实习环节，可用状态下拉跳过直达 Offer）
+  var ADVANCE_ORDER = ['待投递', '已投递', '待笔试', '笔试已完成', '一面已完成', '二面已完成', '三面已完成', '待实习', '实习中', 'Offer'];
+  var STATUS_COLOR = {
+    '待投递': '#6B7280',
+    '已投递': '#2563EB',
+    '待笔试': '#B25E09',
+    '笔试已完成': '#0891B2',
+    '待一面': '#0E7490',
+    '一面已完成': '#0D9488',
+    '待二面': '#0F766E',
+    '二面已完成': '#115E59',
+    '待三面': '#134E4A',
+    '三面已完成': '#065F46',
+    '待实习': '#7C3AED',
+    '实习中': '#5B21B6',
+    'Offer': '#16A34A',
+    '已终止': '#DC2626'
+  };
+  var MATCH_COLOR = { '高': '#16A34A', '中': '#B25E09', '低': '#6B7280', '未评': '#8A9099' };
+
+  var INITIAL_JOBS = [{"id":"r001","company":"创金合信","position":"固收研究员","url":"https://cjhxhr.cjhxfund.com/campus-recruitment/cjhxfund/42063#/job/1b050a86-1a0a-475a-bec9-32a425900052","jd":"1. 宏观与利率研究：跟踪宏观经济数据、货币政策取向、资金面变化及利率债供需结构，撰写宏观利率点评与专题报告，为投资决策提供支持。\n2.债券信用研究：跟踪行业和区域基本面变化，覆盖城投债、产业债、金融债等品种，撰写信用分析报告，跟踪持仓主体及潜在标的信用资质变化，识别信用风险与投资机会。\n3.前沿课题：跟进固收领域前沿议题，包括但不限于：ESG固收、REITs、可转债、绿色债券、衍生品定价等，支持部门创新业务研究。\n4.投资策略研究：跟踪研究机构行为、期限利差、信用利差和品种利差，开发收益率曲线和利差分析模型，开展投资策略专题研究。\n5. 投研协同：参与部门投资策略讨论，协助投资经理完成个券筛选、尽调支持、投后跟踪等工作；配合完成监管报告、数据报送等合规事务","deadline":"","tags":["基金"],"match":"中","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"","source":"跟进文档","matchNote":"有创金合信实习经历加分，Python/Wind可用，但缺宏观利率与信用研究经验"},{"id":"r002","company":"中证信用","position":"投资项目助理（实习）","url":"https://wecruit.hotjob.cn/SU60867bdc2f9d2403ab74fbf7/pb/posDetail.html?postId=6a55daacba2dc64cbb6af42c&postType=intern","jd":"1.协助部门完成普惠业务、可交债、不良资产业务的数据整理、简短报告撰写，以及业务投后报告整理；\n2.日常数据收集、资料查询等；\n3.根据部门工作安排，完成上级领导交办的其他工作。","deadline":"","tags":["实习"],"match":"中","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"","source":"跟进文档","matchNote":"数据整理与报告撰写能力匹配，实习门槛适中，但不良资产/可交债业务无直接经验"},{"id":"r003","company":"中金","position":"投资分析实习生","url":"https://cicc.zhiye.com/custom/projectxq?jc=3&hideMenu=1&jobAdId=f11c29fc-7280-40ff-993d-bc9f84d32e83#this","jd":"1.参与海外市场、私募基金和投资组合公司的相关研究及数据整理工作；\n2.协助包括私募股权、私募债权在内的海外另类策略基金的尽调工作；\n3.支持与基金募集有关的材料准备；\n4.协助进行投后管理和其他支持性工作。","deadline":"","tags":["证券","实习","已投"],"match":"中","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"docx 标注「投递成功」","source":"跟进文档","matchNote":"研究与数据整理能力匹配、有英文论文写作能力，但海外市场与私募尽调无直接经历"},{"id":"r004","company":"杭州龙旗","position":"AI研究员","url":"mailto:job@sci-inv.com","jd":"1. 主导AI 算法在量化场景的研发与落地，聚焦金融时序预测、Alpha 因子挖掘、组合优化等核心方向，涵盖数据预处理、特征工程、模型构建与实盘迭代全流程；\n2. 负责AI应用知识库的内容处理和架构设计与开发，参与向量库的研发和维护，以及相应检索评估体系的建设；\n3. 追踪全球 AI 前沿技术（如大模型轻量化、强化学习、多模态融合等），开展预研与技术转化，构建公司量化策略技术壁垒；\n4. 协同投研、交易、风控团队完善算法研发规范，沉淀技术文档与策略归因分析报告，推动团队高效协作。","deadline":"","tags":["基金"],"match":"低","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"","source":"跟进文档","matchNote":"岗位要求深度学习/大模型算法研发与实盘迭代，偏底层算法研究，你的优势在应用层"},{"id":"r005","company":"杭州龙旗","position":"量化研究员","url":"mailto:job@sci-inv.com","jd":"1、基于主动型量化证券组合管理研究方法和理念，依据国内外宏观、行业、市场、公司以及投资者行为特征，负责研究、搭建、测试和实施各类证券与金融衍生品个券选择，板块配置与市场择时等模型驱动型量化投资策略;\n2.与研究团队合作维护现有量化投资模型，参与讨论研究与开发新模型与策略;\n3、撰写特定市场与行业的研究报告;负责对公司投资策略和产品策略提出建议;\n4、负责拟定资产配置与交易方案，完成公司管理基金的日常投资管理工作，并撰写投资管理报告;\n5、负责与投资人沟通，解答与投资策略相关的问题。","deadline":"","tags":["基金"],"match":"中","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"","source":"跟进文档","matchNote":"有量化因子挖掘与回测项目经历，但私募量化研究员对数学功底与竞赛背景要求高"},{"id":"r006","company":"平安基金","position":"产品研发部招募实习生","url":"mailto:chenshusue@126.com","jd":"1、协助产品经理工作；\n2、负责国内外基金、资管行业数据统计、数据整理及研究工作；\n3、协助产品报会及备案阶段的上报、审批、反馈等事宜；\n4、领导交办的其他事宜。","deadline":"","tags":["基金","实习"],"match":"高","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"","source":"跟进文档","matchNote":"基金产品方向与创金合信基金实习直接相关，产品思维+金融数据能力齐备"},{"id":"r007","company":"华金证券","position":"华金新锐（产融服务方向）","url":"https://wecruit.hotjob.cn/SU6407e1620dcad470d9ae9633/pb/posDetail.html?postId=6a44fd8895ac2666e94cb0c6&postType=campus","jd":"此方向培养懂产业、懂资本、懂合规的复合型投行人才，深度参与股权 / 债权全链条资本运作，成长为产融结合的产业金融专家：\n1.辅助股权 / 债券融资全流程执行，涵盖尽调、方案设计、申报材料制作与项目落地；\n2.跟踪产业政策与行业趋势，挖掘业务机会，协助维护客户与渠道资源；\n3.运用各类工具提升尽调、文档处理与合规核查效率，推动投行作业数字化；\n4.配合质控、合规部门保障项目全流程合规、风险可控。","deadline":"","tags":["证券"],"match":"中","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"","source":"跟进文档","matchNote":"管培类重综合素质，金融科技背景符合，产融服务方向经验待补"},{"id":"r008","company":"快手","position":"具身智能算法研究员","url":"https://campus.kuaishou.cn/recruit/campus/e/h5/#/campus/jobs?code=campusbAsCUXetw","jd":"1.学习能力强，有技术激情和追求；发表高水平论文者优先；获得过知名竞赛奖项者优先；\n2.动手能力强，熟练掌握相关编程语言和框架；熟练使用AI coding工具者优先；\n3.对相关领域的算法和数据有较好的sense和taste；有实际落地经验者优先；\n4.具备较好的跨团队协作能力，共同把技术做到行业领先并实际落地。","deadline":"","tags":["互联网","硬件","跟进文档·待核实"],"match":"低","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"具身智能核心算法研究岗，RL/机器人技术栈与经历不匹配"},{"id":"r009","company":"快手","position":"强化学习算法研究员（可灵AI）","url":"https://campus.kuaishou.cn/recruit/campus/e/h5/#/campus/jobs?code=campusbAsCUXetw","jd":"1.在强化学习、多模态生成模型、模型对齐、奖励模型等至少一个方向有项目经验；\n2.具备扎实代码能力和实验能力，有大模型训练、调参、debug 经验；\n3.好奇心强，思路灵活，做事靠谱细致，有责任心，能推动开放问题持续迭代；\n4.熟练使用 AI coding/agent 工具，能够提升研发和实验效率。","deadline":"","tags":["互联网","硬件","曾挂","可重投"],"match":"低","status":"终止","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"docx 标注「挂，还可投」","source":"跟进文档","matchNote":"强化学习算法研究岗门槛高，此前已挂一次"},{"id":"r010","company":"中证信用","position":"产品岗","url":"https://wecruit.hotjob.cn/SU60867bdc2f9d2403ab74fbf7/pb/posDetail.html?postId=68a2d51a6c88b20bfe45a505&postType=campus","jd":"2、协助产品总监参与重要项目的调查并分析市场行情，不断开发和搜寻新的业务需求；\n3、设计公司相关信用风险产品的功能需求，沟通开发团队；\n4、与销售经理协同，承担售前和进行中项目的客户沟通、协调，正确、全面了解客户需求；\n5、设计信用评估方案需求和产品开发的迭代管理；\n6、公司安排的其他相关工作。","deadline":"","tags":[],"match":"中","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"","source":"跟进文档","matchNote":"产品+金融复合背景可用，岗位信息不足待确认具体职责"},{"id":"r011","company":"拓竹","position":"数据分析工程师","url":"https://bambulab.jobs.feishu.cn/s/fJyGr-lcFtw","jd":"2、与销售渠道等业务团队保持高效协作，帮助业务制定目标和拆解实现路径；\n3、从专业的数据视角给业务呈现数据分析结果，驱动决策路径，优化解决方案；","deadline":"","tags":["硬件"],"match":"中","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"","source":"跟进文档","matchNote":"Python/SQL扎实，但偏数据工程而非业务分析"},{"id":"r012","company":"shopee","position":"跨境金融业务策略与运营","url":"https://app.mokahr.com/m/campus_apply/shopee/2962?recommendCode=DSvNcFCM#/jobs","jd":"1. 参与 Shopee 跨境卖家金融项目的规划与落地，包括卖家支付、卖家保险等金融服务项目，协助推动项目从方案设计、资源协调到上线运营的全流程实施；\n2.与产品、技术、法务合规、财务、运营及各区域业务团队紧密合作，协调内外部资源，推动跨境金融项目在不同市场顺利落地；\n3. 对接外部合作伙伴如第三方支付机构等，参与合作方案设计、业务沟通及项目推进，完善生态合作网络；\n4. 负责项目上线后的业务运营，包括用户增长、数据分析、问题跟进及持续优化，不断提升业务效果及卖家体验；\n5. 持续关注全球金融科技及跨境电商行业的发展趋势，开展市场及行业研究，探索创新业务模式，为业务规划及项目迭代提供支持。","deadline":"","tags":["互联网","初筛"],"match":"高","status":"笔试测评","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"docx 标注「虾皮初筛」","source":"跟进文档","matchNote":"金融+运营+电商三重背景直接对口，京东跨境事业部经历契合跨境场景"},{"id":"r013","company":"oppo","position":"互联网产品经理","url":"https://careers.oppo.com/university/oppo/campus/post?shareId=18029","jd":"方向一：从事移动互联网产品、商业化产品的策划工作，为用户及开发者提供优秀的产品体验和优质的互联网服务；\n方向二：分析行业发展趋势，洞察用户及开发者的痛点和需求，在此基础上策划和输出产品方案，并跟进实现；\n方向三：分析产品上线后的数据和用户反馈，持续迭代和优化产品；\n方向四：主导数据产品的研发，与数据开发、业务部门紧密合作，挖掘大数据价值，形成可落地产品。","deadline":"","tags":["互联网","曾挂","可重投"],"match":"高","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"docx 标注「已挂还可以投一个」","source":"跟进文档","matchNote":"AI软件产品经理方向简历直接对口，AIGC工具深度使用+产品体感匹配"},{"id":"r014","company":"大疆","position":"产品运营","url":"https://apply.careers.dji.com/campus-recruitment/dji/143359?locale=zh-CN#/job/88fa1088-a72e-46e8-80d2-ecd0bb38075f","jd":"1. 参与内容规划，策划内容专题运营，挖掘流行趋势与爆款，促进用户内容消费；\n2. 结合功能进行整合营销推广，制定传播方案，跨部门协作推进推广活动落地；\n3. 负责用户反馈与产品运营，梳理用户反馈、闭环用户反馈问题推进功能优化；\n持续开展用户运营与社群运营，沉淀核心用户，保持用户黏性。\n华泰证券\nhtsc.com.cn","deadline":"","tags":["硬件","跟进文档·待核实"],"match":"中","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"运营能力全面，但大疆偏硬件影像场景，内容运营经验可迁移"},{"id":"r015","company":"腾讯","position":"青云计划（金融大模型研究员）","url":"https://join.qq.com/post_detail.html?postid=1281715980657337344","jd":"-深入研究金融领域大模型综合推理能力提升方法和应用落地，例如资产配置分析、个股分析、产业分析，其它投资顾问相关深度问答等场景的模型优化；\n-探索将业务知识与领域深度推理能力融入大模型的有效方法，通过 Agent、SFT/RLHF 等技术手段提升模型在金融场景的实际效果，提升整体金融智慧能力；\n-设计并实现鲁棒的 Reward 系统与环境模拟机制，通过多应用场景的持续交互推动模型自我提升；\n-构建有效的用户闭环反馈与评价机制，推动模型智能持续演进；\n-负责多场景综合调优与强化学习方案设计，实现通用金融能力的全面提升；\n-撰写顶会论文并申请专利，形成学术成果输出。","deadline":"","tags":["互联网","跟进文档·待核实"],"match":"中","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"金融+大模型交叉背景契合、有LLM微调与NLP项目，但研究员岗竞争极激烈"},{"id":"r016","company":"联想","position":"产品运营","url":"https://talent.lenovo.com.cn/position/detail?id=2364","jd":"1.积极参与产品运营推广工作，紧密结合产品功能与特点，制定切实可行的产品运营方案，推动产品在市场中的有效传播与推广。\n2.深入分析业务数据，依据数据洞察市场趋势与用户需求，精心设计与优化产品推广策略，同时致力于完成标杆案例的打造以及方法论的挖掘与建立，为产品运营提供有力支撑。\n3.全面负责行业产品分析工作，定期开展市场调研，广泛收集并深入评估客户需求，及时解答客户关于产品的各类问题，积极推动产品持续优化与完善。","deadline":"","tags":["互联网","跟进文档·待核实"],"match":"中","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"通用产品运营岗，运营与数据能力匹配，行业经验无特殊加成"},{"id":"r017","company":"字节","position":"剪映（图片创作产品）","url":"https://jobs.bytedance.com/campus/position/7667442236142848261/detail","jd":"1、参与全球图片创作工具的产品建设，重点关注用户体验及留存；\n2、深入研究图片创作流程，与AI等新技术结合，探索行业领先的图片创作体验；\n3、通过审美趋势洞察、数据分析、用户反馈、需求收集等方式，发现潜在需求和优化；\n4、负责项目推进过程中的跨部门协调沟通工作，能够协调各资源以确保产品顺利上线并获得反馈。","deadline":"","tags":["互联网","跟进文档·待核实"],"match":"高","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"AIGC影像工具深度用户+剪映熟练+内容创作全流程，AI产品经理版简历即为此岗定制"},{"id":"r018","company":"阿里巴巴","position":"ai产品经理","url":"https://campus-talent.alibaba.com/campus/position/199907700037?deptCodes=","jd":"1. 深入理解业务场景，通过用户调研、行业分析及研究挖掘AI落地的创新机会；\n2. 负责AI应用/平台的方案设计，包括核心功能定义、工作流（Workflow）编排及Prompt设计，输出高质量的产品路线图；\n3. 与算法工程师、后端开发紧密协作，将大模型能力（LLM、多模态、Agent、RAG等）转化为可规模化的产品功能；\n建立产品评估体系，利用数据工具（SQL/Python）监控指标波动，根据数据反馈和用户原声持续优化算法表现与用户体验","deadline":"","tags":["互联网","跟进文档·待核实"],"match":"高","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"AI产品经理主投方向，AIGC工具+数据驱动+需求拆解能力齐备"},{"id":"r019","company":"光大证券","position":"研究业务类","url":"https://ebscn.zhiye.com/campus/detail?jobAdId=885c1257-cd5b-47e8-b0b9-246ac097ed96","jd":"涵盖卖方研究、资管投研等方向。","deadline":"","tags":["证券","已投"],"match":"中","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"docx 标注「已投」","source":"跟进文档","matchNote":"投研方向有量化与NLP项目支撑，但缺行业研究实习经历"},{"id":"r020","company":"得物","position":"鉴别运营（品牌研究与管理）","url":"https://poizon.jobs.feishu.cn/s/sa2kx9YaOb8","jd":"通过培训学习鉴别知识、产品鉴别特点，负责所属品牌的研究和运营管理工作，主要包括：\n1.鉴别标准/流程迭代：基于内外部信息，持续挖掘鉴别标准与流程的迭代机会点，确保鉴别能力始终走在造假手段之前\n2.业务拓新：基于对类目商品的了解和用户需求的挖掘，协同交易等部门拓展有市场潜力的品牌鉴别能力，推动业务增长\n3.履约支持：通过专业能力的学习，带领鉴别师解决鉴别过程中遇到的疑难问题\n4.技术迭代：协同技术和实验等团队，持续探索新技术对鉴别能力和效率提升的机会点，例如AI鉴别\n5.市场及用户调研：持续开展外部信息的收集和分析，站在用户视角，帮助内外部用户解决问题，挖掘鉴别能力迭代和鉴别服务体验升级的机会点","deadline":"","tags":["互联网"],"match":"低","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"","source":"跟进文档","matchNote":"品牌/鉴别垂直领域，与金融+AI+内容运营背景关联弱"},{"id":"r021","company":"携程","position":"旅游业务培训生（业务运营）","url":"https://job.ctrip.com/#/campus/job-detail/MJ036701","jd":"1. 与供应商进行日常沟通及关系维护，保障旅游产品稳定运营；\n2. 追踪市场趋势，拓展合作资源，精细化供应链运营，以数据驱动创效增利；\n3. 通过数据分析推动产线迭代升级，动态追踪关键指标，精准定位瓶颈与突破点；\n4. 基于质量数据赋能供应商，持续优化旅游产品。","deadline":"","tags":["互联网"],"match":"中","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"","source":"跟进文档","matchNote":"业务运营管培，运营功底扎实，旅游行业无经验"},{"id":"r022","company":"滴滴","position":"产品助理（国际化金融-巴西支付-英语/葡语）","url":"https://campus.didiglobal.com/campus_apply/didiglobal/96064#/job/a0e29044-eb0d-4ae8-aa60-0e754a8de68c","jd":"1、收集与发现用户使用过程中的体验问题，提出逻辑清晰并有创造力的解决思路；\n2、收集产品需求，对用户需求、市场需求和业务需求进行调研分析，不断优化产品，提升产品体验；\n3、参与客户端、策略、后台等产品功能的设计工作，并产出产品需求文档；\n4、与设计、运营、技术等合作部门沟通协作，推动产品的落地与最终效果的评估；\n5、完成从需求评审、开发测试、发布上线及上线后产品推广运营的项目管理全过程。","deadline":"","tags":["互联网"],"match":"低","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"","source":"跟进文档","matchNote":"岗位要求英语/葡语，葡语不具备；支付+金融方向本身尚可"},{"id":"r023","company":"九坤投资","position":"【揽月计划】量化交易分析师","url":"https://app.mokahr.com/campus_apply/ubiquantrecruit/37031#/job/9bc0220a-9795-4f4f-8939-a8de4614dfad/apply","jd":"为投资组合、交易执行提供数据与分析支持，利用AI vibe coding设计并使用自动化工具，优化现有流程和效率；\n\n对量化投资策略表现进行跟踪、分析和风险评估，结合市场结构对策略及交易执行风险进行分析并有效管理；\n\n使用概率、统计或机器学习等方法分析交易链路、市场结构及交易相关数据，搭建模型为策略和风控提供分析支持；\n\n与基金经理、交易员、IT、风控等部门密切合作，处理其他与交易和风控相关的工作。","deadline":"","tags":["基金","跟进文档·待核实"],"match":"中","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"量化策略项目+因子挖掘经历可用，顶级量化私募门槛极高"},{"id":"r024","company":"影石","position":"AI软件产品经理","url":"https://arashivision.jobs.feishu.cn/campus/position/7657125102517111078/detail","jd":"1、参与飞行相机/影像产品相关App、机身端、遥控/Beacon等多端软件体验设计，负责用户场景拆解、需求定义、功能流程梳理、交互方案打磨与版本验收；\n\n2、协助产品经理完成竞品分析、用户研究、需求文档、原型设计、研发沟通、测试验收和上线复盘，推动软件功能从想法到落地；\n\n3、围绕智能影像、拍摄、剪辑、设备连接、飞行交互等场景，持续发现用户痛点，提出可落地的软件体验优化方案；\n\n4、与交互设计、视觉设计、App研发、固件、算法、测试等团队协作，跟进需求排期、实现质量和用户体验闭环。","deadline":"","tags":["硬件"],"match":"高","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"","source":"跟进文档","matchNote":"影像产品体感+AIGC工具深度+独立建站经历，AI软件产品经理版简历直接对口"},{"id":"r025","company":"影石","position":"内容运营专员","url":"https://arashivision.jobs.feishu.cn/campus/position/7663423253630060838/detail","jd":"1、负责国内及海外创作者挖掘及引入，1v1建联维护核心创作者、运营社群；跟踪创作者投稿量等数据并定期反馈；\n2、日常监控社媒娱乐热点，输出爆款内容创意；引导创作者产出爆款视频。","deadline":"","tags":["硬件"],"match":"高","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"","source":"跟进文档","matchNote":"AI内容生产体系搭建经验（阅读量环比+1016%）+视频制作全流程，直接对口"},{"id":"r026","company":"影石","position":"增长运营专员","url":"https://arashivision.jobs.feishu.cn/campus/position/7663425034061449499/detail","jd":"1、活动策划与执行：负责APP内外增长活动全链路策划，涵盖创意构思、玩法设计及执行落地，确保活动按时高质量上线；\n2、精细化投放策略：协调资源进行精细化投放，通过优化活动玩法与投放素材，提升转化率及ROI；\n3、数据驱动决策：建立监控体系，深入分析用户行为数据并输出复盘报告，基于数据洞察持续迭代方案；\n4、本地化运营：负责活动多语言本地化适配，确保活动符合目标市场文化背景与用户偏好；\n5、跨职能协同：协同产品、研发、设计、市场等部门推动活动能力开发上线，优化用户路径体验及转化效率；\n6、竞品调研与追踪：追踪全球热点与竞品动态，探索激励体系等创新玩法，确保业务增长目标达成。","deadline":"","tags":["硬件"],"match":"高","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"","source":"跟进文档","matchNote":"数据驱动增长+内容运营+私域触达经历完整"},{"id":"r027","company":"易方达","position":"AI应用岗（营销与渠道运营）","url":"https://wecruit.hotjob.cn/SU6a8fb99e1ad6db7cf83eb885/pb/posDetail.html?postId=6a83d05a43154813049f6fdd&postType=campus","jd":"1. 推动AI应用于科学零售领域，依托深度数据洞察与业务逻辑，打通“产品、客户、渠道、内容”四层框架，主导建立以客户为中心的科学营销体系；\n2. 负责公司在各合作渠道的AI化运营；运用AI工具完成用户画像、行为分析、运营策略、内容生成，输出适配客群的运营策略、文案、素材与活动方案；\n3. 使用AI工具设计经营驾驶舱与各类数据看板，并基于产品、渠道以及客户数据，挖掘业务机会，把握销售热点。","deadline":"","tags":["基金","已投"],"match":"高","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"docx 标注「校招投两个」","source":"跟进文档","matchNote":"基金营销渠道运营与创金合信互金运营实习直接对口，AI工具应用加分"},{"id":"r028","company":"易方达","position":"AI应用岗（产品与发展研究）","url":"https://wecruit.hotjob.cn/SU6a8fb99e1ad6db7cf83eb885/pb/posDetail.html?postId=6a83ce9a68cc6f624f43c456&postType=campus","jd":"1. 宣传策划：跟踪国内外最新AI技术，结合宣传策划业务研究探索落地场景，并设计各类AI创新服务工具；\n2. 发展研究：推动AI技术与发展研究工作的深度融合，对研究分析、数据处理和知识沉淀等环节提供智能化支持；\n3. 产品研究：研究国内外资产管理产品的发展动态、竞争格局、业务模式等，运用AI技术为产品战略、产品设计提供研究支持。","deadline":"","tags":["基金","已投"],"match":"高","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"docx 标注「校招投两个」","source":"跟进文档","matchNote":"AI应用fund版简历直接对口，AI落地+资管产品研究双匹配"},{"id":"r029","company":"Shopee","position":"产品经理","url":"https://app.mokahr.com/campus_apply/shopee/2962?recommendCode=DSvNcFCM#/job/0de98726-0a7a-4e47-be8c-0daaf500ed52","jd":"1、负责产品全生命周期管理，把控产品全流程：需求调研、规划、原型设计、项目推进、上线及后续迭代；\n2、深度挖掘用户需求，结合市场分析与竞品研究，提出产品改进建议；\n3、与研发、设计、运营等多部门紧密协同，保障产品项目顺利推进，实现按时、高质量交付；\n4、收集并分析产品数据，依据数据及用户反馈，持续优化产品功能与用户体验；\n5、时刻关注行业动态和市场变化，灵活调整产品方向，维持产品竞争力；\n6、具备AI产品思维，积极探索业务场景中AI应用的可能性。","deadline":"","tags":["互联网","初筛"],"match":"中","status":"笔试测评","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"docx 标注「虾皮初筛」","source":"跟进文档","matchNote":"产品思维与电商背景可用，正式产品经理岗经验积累尚浅"},{"id":"r030","company":"vivo","position":"互联网运营经理（应用方向）","url":"https://hr-campus.vivo.com/campus/detail?jobAdId=cb8fec26-0634-428c-81fc-474e2826e0e3","jd":"1、创造用户喜爱的产品和服务，以用户需求为导向，不断追求极致，让热爱引领热爱；\n2、学习和涉猎：市场研究、用户研究、数据分析、产品规划、运营规划、商业变现等方法论，并通过实践得以强化；\n3、打造数亿级月活的产品平台，通过产品和运营解决方案，影响上千万、甚至上亿用户；\n4、接触并探索包括不限于vivo应用商店、vivo游戏中心、vivo浏览器、vivo视频、vivo钱包等涵盖各个场景的平台产品运营经验。","deadline":"","tags":["互联网","跟进文档·待核实"],"match":"高","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"运营核心能力全中：内容、数据、增长、AI提效"},{"id":"r031","company":"美团","position":"AI产品运营岗","url":"https://zhaopin.meituan.com/web/position/detail?jobUnionId=4697324893&highlightType=campus","jd":"1. 用户运营：以用户为中心，制定运营策略与运营目标，做好全过程的项目推进与执行落地，持续增加用户洞察、为用户创造更多价值。\n2. 商家及供给运营：以商家/骑手/司机/供应商为运营主体，运用科学合理的方式制定策略，实现业务渗透、规模增长、结构优化等。\n3. 内容运营：以内容/信息/数据的生产、消费、业务应用为核心，开展UGC、PGC、新媒体运营，搭建良性生产循环。\n4. 工具系统运营：围绕内部用户，通过数据分析、系统开发和使用、规则流程制定等方式推动各方效率提升。\n5. 体验运营：为体验问题定位、分析、解决、评估提供全流程支持，推动服务工具的效率和体验提升。","deadline":"","tags":["互联网","跟进文档·待核实"],"match":"高","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"AI+产品+运营交叉点正是复合优势所在"},{"id":"r032","company":"网易互娱","position":"AI策略运营","url":"https://campus.game.163.com/app/detail/index?id=4714&projectId=102","jd":"1.运用AI模型，结合游戏用户数据，搭建游戏生态、用户生命周期等多种运营管理模型（LTV预测、付费转化、流失预警等）；\n2.利用AI挖掘用户行为数据，构建基于用户管理模型的AI智能触达策略体系，提升策略转化效率；\n3.基于AI搭建运营策略内容生产管线，根据运营业务场景智能生产有效宣传素材、剧情副本、社交裂变等内容；\n4.建立竞品AI应用监控体系，输出行业AI运营趋势报告和AI工具使用方法论，推动运营团队AI化提效","deadline":"","tags":["互联网","跟进文档·待核实"],"match":"高","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"AI工具应用+内容运营能力直接匹配，游戏行业经验需临阵补课"},{"id":"r033","company":"申万宏源","position":"财富顾问","url":"https://app.mokahr.com/campus-recruitment/swhysc-job/166086#/job/d6c7f8a8-d655-4e18-b154-761c89205719","jd":"1、依托公司平台和相关业务支持，开发和维护客户关系，挖掘不同客群的资产配置需求，为客户提供金融服务解决方案；\n2、策划、组织和实施线上线下营销活动，通过持续提供平台化内容输出支持，不断提高客户服务覆盖率，推动产品销售，提升服务能力和产品竞争力；\n3、部门安排的其他工作","deadline":"","tags":["证券","跟进文档·待核实"],"match":"中","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"金融证书齐全+基金实习背景，但偏销售服务导向"},{"id":"r034","company":"招商银行","position":"数字金融","url":"https://career.cmbchina.com/positionDetail/school?publishId=0AFAA10E-1837-4897-8796-E14F32D1FC91","jd":"从事数据分析挖掘、软件开发、系统及网络维护等岗位工作，成为银行金融科技人才。","deadline":"","tags":["银行","跟进文档·待核实"],"match":"高","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"金融科技硕士+数字化运营经历+证书齐全，高度对口"},{"id":"r035","company":"迅雷","position":"游戏工具产品增长运营","url":"https://campus.xunlei.com/campus-recruitment/xunlei/26600/#/job/11c0bbd3-0309-4b52-bac5-13ad54f2209f","jd":"1、参与制定产品增长策略，共同为产品的新增规模、成本、质量负责，独立负责业务二级指标；\n2、搭建产品推广新媒体矩阵账号，以千播转化新增数为目标，测试可规模化的高转化率推广内容模板，并拓展及对接第三方推广机构/koc，通过制定激励策略、内容培训等方式，提升产品推广效果实现新增转化；\n3、处理相关合规事宜，包括渠道上架、合同流程、财务结算等。","deadline":"","tags":["互联网","跟进文档·待核实"],"match":"中","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"增长运营方法匹配，游戏行业与工具类产品经验缺"},{"id":"r036","company":"迅雷","position":"X-PEP产品星计划","url":"https://campus.xunlei.com/campus-recruitment/xunlei/26600/#/job/1dead992-7754-403f-aa21-801c3ef7172a","jd":"X-PEP全称Xunlei Product Excellence Program，是迅雷集团面向全球校园优秀人才推出的产品经理卓越人才计划。我们将在全球范围内持续招募并培养有志于通过产品改变世界、改变生活的卓越人才。\n\n加入X-PEP，你将获得极具竞争力的薪酬、公司优势资源培养，全方位开阔眼界和提升能力，与众多优秀的产品经理并肩同行，用产品改变世界。","deadline":"","tags":["互联网","跟进文档·待核实"],"match":"高","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"产品培养计划，AI产品经理方向+产品闭环能力匹配"},{"id":"r037","company":"九号公司","position":"服务AI产品专员（集团-服务）","url":"https://app.mokahr.com/campus-recruitment/ninebot/45627?locale=zh-CN#/job/c5ac9092-9e05-4977-aac5-529eed2f898e","jd":"1. 协助知识库及AI相关功能数据运营指标搭建，根据业务要求输出数据运营方案，对关键指标进行统计分析；\n2. 支撑埋码方案设计、数据指标分解及数据看板设计。","deadline":"","tags":["硬件","跟进文档·待核实"],"match":"高","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"AI产品落地+用户服务视角匹配，AI工具应用能力是加分项"},{"id":"r039","company":"平安寿险","position":"NS管培生（产品）","url":"https://campus.pingan.com/positionDetail?positionId=4b346931bb4035ddb33640230ef5a96f","jd":"1、负责寿险科技相关平台的产品能力建设，关键路径拆解和执行；\n2、深入理解和抽象客户需求，转化为高品质的产品设计或解决方案；\n3、多维度评估需求实现的效果，确保产品和服务的竞争力。","deadline":"","tags":["跟进文档·待核实"],"match":"高","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"产品方向管培，金融+产品复合背景符合"},{"id":"r040","company":"平安金服","position":"运营类管培生","url":"https://campus.pingan.com/positionDetail?positionId=45654de1f29e3eda9274485b7ac330d6","jd":"1. 参与承接业务战略与运营目标，搭建业务运营监测体系，对核心业务指标开展常态化监控，及时识别运营异常点，完成风险预警。\n2. 围绕业务质量、作业效率、服务体验、产能人效开展多维度运营专题分析，透过数据挖掘根因，输出分析结论与可落地优化建议。\n3. 联动业务一线、各业务条线开展业务调研，定位经营过程中的卡点与痛点，推动分析结论转化为业务改善动作，跟进改善落地效果复盘。\n4. 参与运营数据看板、分析模型的迭代优化，沉淀分析口径、业务指标库，赋能业务实现精细化运营。\n5. 输出各类经营分析报告、专项调研材料，支撑业务复盘会、专题研讨，为业务策略调整提供数据决策依据。","deadline":"","tags":[],"match":"高","status":"待投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"","source":"跟进文档","matchNote":"基金+电商+私募三方运营经历，管培综合素质匹配"},{"id":"r041","company":"博时基金","position":"行业研究员","url":"https://bosera.hotjob.cn/SU65f940241c240e0a2275bda8/pb/posDetail.html?postId=6a5867db53b4650cd321d64e&postType=campus","jd":"1.跟踪并分析行业动态，包括市场趋势、竞争对手情况、政策变化等；\n2.深入研究行业数据，撰写行业研究报告，为公司决策提供依据；\n3.定期进行市场调研，收集并整理行业内外相关信息等；\n4.撰写上市公司研究报告，并做观点推荐。","deadline":"","tags":["基金","跟进文档·待核实"],"match":"中","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"量化与数据能力可迁移，缺行业研究实习"},{"id":"r042","company":"博时基金","position":"运营助理岗","url":"https://bosera.hotjob.cn/SU65f940241c240e0a2275bda8/pb/posDetail.html?postId=6a82db7e68cc6f624f41cf3c&postType=campus","jd":"1、渠道运营与支持：对接互联网基金销售平台，完成运营工作；\n2、内容创作与营销：撰写营销文案、投教文章，制作专题页，参与直播、短视频等内容创作和录制，协助策划和执行线上营销活动等，提升用户活跃度和销售转化；\n3、用户陪伴与运营：维护社区社群财富号等私域阵地，与用户互动，做好客户陪伴，制定拉新、留存策略；\n4、数据分析与支持：收集、统计、分析运营数据，跟踪营销效果，支持运营决策复盘和调优。","deadline":"","tags":["基金","跟进文档·待核实"],"match":"高","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"基金运营实习经历（创金合信+金斧子）直接对口"},{"id":"r043","company":"南方基金","position":"指数策略研究员","url":"https://wecruit.hotjob.cn/SU6138665dbef57c3b63841399/pb/posDetail.html?postId=6a8830ba4315481304b99975&postType=campus","jd":"1、负责权益、商品类指数产品策略研究，匹配各类投资者的交易、配置型需求，并协助搭建相关系统平台，为公司产品布局及持营提供研究支持。\n2、负责研发定制化、创新型指数，对接指数公司，跟进指数发布与产品体系的推介。\n3、参与ETF生态建设、指数策略及产品营销推广，包括但不限于材料制作、线上/下路演等。","deadline":"","tags":["基金","跟进文档·待核实"],"match":"中","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"有因子与回测研究经历，指数策略研究方向需补"},{"id":"r044","company":"南方基金","position":"AI产品经理","url":"https://wecruit.hotjob.cn/SU6138665dbef57c3b63841399/pb/posDetail.html?postId=6a8830931ad6db7cf81fa930&postType=campus","jd":"1、负责数字化产品需求挖掘与场景定义，理解投研、营销运营、办公效率等场景痛点，输出产品方案。\n2、负责智能体（Agent）产品方案设计与交付落地，覆盖场景拆解、能力规划、交互设计与效果验收，协调研发资源推动端到端交付。\n3、负责用户反馈收集与数据分析，持续优化产品体验与业务价值。\n4、参与产品路线图规划，推动数字化产品在公司多业务条线推广与落地。","deadline":"","tags":["基金","跟进文档·待核实"],"match":"高","status":"已投递","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","note":"据跟进文档进度链接推断，请核实","source":"跟进文档","matchNote":"基金业务理解+AI产品能力双匹配，直接对口"},{"company":"长城证券","position":"校招岗位（待确认）","url":"","jd":"跟进文档提及，具体岗位与链接待补充","deadline":"","tags":["证券"],"status":"待投递","note":"跟进文档提及","id":"r045","match":"中","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","source":"跟进文档","matchNote":"岗位信息待确认，金融科技背景通用"},{"company":"中信证券","position":"校招岗位（待确认）","url":"","jd":"跟进文档提及，具体岗位与链接待补充","deadline":"","tags":["证券"],"status":"待投递","note":"跟进文档提及","id":"r046","match":"中","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","source":"跟进文档","matchNote":"岗位信息待确认，证书与背景满足券商网申条件"},{"company":"小米","position":"小语种运营 / 相机产品经理","url":"","jd":"跟进文档备注：目前只有小语种运营和相机产品经理两个方向","deadline":"","tags":["互联网"],"status":"待投递","note":"跟进文档备注","id":"r047","match":"中","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","source":"跟进文档","matchNote":"影像产品体感与AIGC经验匹配相机产品经理方向；小语种运营方向不匹配"},{"company":"中信集团","position":"对口岗位（未开放）","url":"","jd":"跟进文档备注：对口岗位都还没开","deadline":"","tags":[],"status":"终止","note":"跟进文档备注：未开岗","id":"r048","match":"低","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","source":"跟进文档","matchNote":"岗位未开放，暂无法评估"},{"company":"中国银行","position":"2027全球校招（管培生/信息科技/网点岗位）","url":"https://campus.chinahr.com/pages/2027-boc","deadline":"2026-10-09","jd":"中行2027全球校招：境内分行含管理培训生、信息科技、营业网点业务等岗位；每人最多申请5个岗位。官方公告发布于2026-09-03，报名截止北京时间2026-10-09 24:00。","tags":["银行","AI搜索·官方公告已核"],"status":"待投递","note":"官网 boc.cn 公告核实","id":"r049","match":"高","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","source":"AI搜索","matchNote":"金融科技硕士+银行对口证书齐全，网申条件高度符合"},{"company":"工商银行","position":"2027年度校园招聘（星辰管培生/科技菁英/专业英才等）","url":"https://job.icbc.com.cn","deadline":"2026-10-08","jd":"工行2027校招：星辰管培生、科技菁英、专业英才、客户经理、客服经理等；面向2026.1-2027.7毕业生；网申2026-09-04至10-08；每人最多报名3家机构。","tags":["银行","AI搜索·官方公告已核"],"status":"待投递","note":"官方启事核实","id":"r050","match":"高","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","source":"AI搜索","matchNote":"金融科技背景+综合素质匹配，科技菁英方向尤其契合"},{"company":"农业银行","position":"2027年度校园招聘","url":"https://career.abchina.com.cn","deadline":"2026-10-08","jd":"农行2027校招，各分行陆续发布；每名应聘者最多投报两个岗位；笔试初定2026年10月下旬或11月上旬。具体以分行公告为准。","tags":["银行","AI搜索·已核官网"],"status":"待投递","note":"分行公告核实，截止时间以分行公告为准","id":"r051","match":"高","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","source":"AI搜索","matchNote":"学历专业与证书满足条件，金融科技方向契合"},{"company":"招商银行北京分行","position":"2027秋季校园招聘","url":"https://career.cmbchina.com","deadline":"2026-10-10","jd":"招行北京分行2027秋招：2027届本科及以上；本科生要求英语四级425+（或雅思5.5/托福80），研究生六级425+；投递截止2026-10-10 23:59。官网选「校园招聘-北京分行」。","tags":["银行","AI搜索·官方公告已核"],"status":"待投递","note":"清华就业网转载官方公告","id":"r052","match":"高","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","source":"AI搜索","matchNote":"数字金融背景与该岗方向一致（总行数字金融已投）"},{"company":"平安银行","position":"2027秋季校园招聘（业务/数智金融培训生）","url":"https://campus.pingan.com/pab","deadline":"2026-11-06","jd":"平安银行27秋招：网申2026-08-10至11-06；每人可投3个平行志愿；数智金融培训生欢迎STEM/金融复合背景，业务培训生不限专业。","tags":["银行","AI搜索·官方Q&A已核"],"status":"待投递","note":"平安银行校招官方Q&A","id":"r053","match":"高","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","source":"AI搜索","matchNote":"数智金融方向与AI+金融复合背景直接对口"},{"company":"建设银行","position":"2027年度校园招聘","url":"https://job.ccb.com","deadline":"2026-10-10","jd":"建行2027校招，网申预计2026-09-09至10-10。","tags":["银行","AI搜索·时间待核"],"status":"待投递","note":"时间为三方资讯，请以官网为准","id":"r054","match":"高","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","source":"AI搜索","matchNote":"学历专业与证书齐全，截止时间待核实"},{"company":"交通银行","position":"2027年度校园招聘","url":"https://job.bankcomm.com","deadline":"2026-10-12","jd":"交行2027校招，网申预计2026-09-05至10-12。","tags":["银行","AI搜索·时间待核"],"status":"待投递","note":"时间为三方资讯，请以官网为准","id":"r055","match":"高","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","source":"AI搜索","matchNote":"学历专业与证书齐全，截止时间待核实"},{"company":"邮储银行","position":"2027年度校园招聘","url":"https://career.psbc.com","deadline":"2026-09-30","jd":"邮储银行27秋招，网申预计2026-09-01至09-30。","tags":["银行","AI搜索·时间待核"],"status":"待投递","note":"时间为三方资讯，请以官网为准","id":"r056","match":"高","appliedDate":"","lastUpdate":"","createdAt":"2026-09-05","source":"AI搜索","matchNote":"学历专业与证书齐全，截止时间待核实"}];
+
+  var DEFAULT_RESUME = "【王馨悦 | 暨南大学 金融科技硕士 | 2027年6月毕业 | 18785182537 | 798308675@qq.com】\n\n== 教育背景 ==\n2025.09-2027.06 暨南大学 金融科技 硕士（研一平均分91.89；机器学习与金融大模型92、Python94、Java93、数据挖掘97、资产定价与风险管理96、投资学92）\n2021.09-2025.07 暨南大学 电子商务 本科（绩点3.83/5.00，专业前15%；网络营销94、数据库SQL96、面向对象程序设计95）\n荣誉：研究生二等奖学金、优秀学生骨干奖学金、研究生创新论坛学术成果三等奖\n\n== 实习经历 ==\n2026.05-2026.08 深圳金斧子网络科技 私募基金运营实习生：每周整理千余条基金净值与超额收益数据并深度复盘；搭建AI全链路内容生产体系，运用剪映/GPT/Seedance/Nano Banana/即梦/Minimax产出金融图文与短视频，公众号阅读人数环比增长1016%。\n2026.05 京东 跨境事业部采销电商运营实习生：水具品类全链路运营，SKU生命周期维护与库存调整，详情页优化，拆解GMV/动销率指标，策划内购活动对接20+供应商并私域社群触达。\n2026.03-2026.05 创金合信基金 网金业务部互联网金融运营实习生：多平台基金提报与热点内容运营，单月曝光40万+、转化GMV约80万；对接蚂蚁/京东理财平台协同产品上线；熟练使用Wind/iFind完成数据检索与行业分析。\n2023.06-2023.09 贵州省信息安全测评认证中心 信息技术发展部工程师：独立设计制作\"数小服\"宣传IP，熟练使用AI生图、剪映、PS；获新华社等7家媒体报道。\n\n== 科研与项目 ==\n2026.02-2027.06 财经文本NLP量化挖掘（毕业论文）：Python爬虫+jieba分词+LLM与RoBERTa微调，提取市场情绪与政策倾向特征，转化为量化回测信号。\n2025.10-2026.01 股票AI量化策略研究：Pandas/sklearn构建A股量价因子池，对比LASSO/随机森林/XGBoost挖掘选股因子，搭建带动态风控的回测框架，测算收益/夏普/最大回撤。\n2025.10-2026.01 机器学习与智能投顾建模：融合用户画像与市场时序数据的多资产配置模型对比回测。\n2025.10-2026.01 业务数据库系统开发：MySQL/SQLite建模+Python Tkinter GUI，人事管理与进销存系统。\n2023.02-2023.08 清华大学数字金融与MEM专题科研：创业公司融资策略与PE投资逻辑，独立发表英文学术论文。\n\n== 技能与证书 ==\n技能：Python、SQL、Java、MySQL、Wind、iFind、机器学习（sklearn/XGBoost）、NLP（jieba/RoBERTa/LLM微调）、AIGC工具（剪映/Seedance/Nano Banana/即梦/Minimax/PS）、Prompt与AI Agent工作流搭建、理解RAG架构、Excel数据处理\n证书：基金从业资格、证券从业资格、深港澳一级金融科技师、CET6、普通话二级甲等\n\n== 求职方向 ==\nAI产品经理 / AI应用与产品研究 / 基金互金运营 / 投研与量化 / 银行国企管培\n\n（注：针对不同岗位有5个定制版本——AI软件产品经理版 / AI应用·资管版 / 互联网基金运营版 / 智能投研版 / 私募量化版，差异主要在自我评价的侧重表述）";
+
+  var jobs = (typeof __jobs !== 'undefined') ? __jobs : [];
+  var state = (typeof __state !== 'undefined') ? __state : { tab: 'kanban', search: '', statusFilter: '全部状态', matchFilter: '全部匹配度', tailorId: '', coOpen: {}, coSearch: '', coSort: 'count', boardTab: '总览' };
+
+  var LEXICON = ['AI', '大模型', 'LLM', 'Agent', 'RAG', '多模态', '强化学习', '算法', '机器学习', '深度学习',
+    '量化', 'Python', 'SQL', '数据分析', '数据挖掘', '数据看板', '指标', 'A/B测试',
+    '产品经理', '产品设计', '需求分析', 'PRD', '原型', '用户研究', '竞品分析', '用户体验', '交互',
+    '增长', '运营', '用户运营', '内容运营', '社群运营', '新媒体', '投放', '转化率', 'ROI', 'LTV',
+    '留存', '活动策划', '营销', '品牌', '市场调研', '项目管理', '跨部门', '商业化', '变现',
+    '金融', '基金', '证券', '银行', '保险', '固收', '债券', '信用', '风险', '风控', '尽调', '投研',
+    '宏观', '资产配置', '财富管理', '销售', '客户', '渠道', '管培', '培训生',
+    '英语', '六级', '四级', '统计学', '经济学', '计算机', '数学', '建模', '报告撰写',
+    '策划', '视频', '剪辑', '创作者', '国际化', '跨境', '电商', '游戏', 'App', '客户端',
+    '供应链', '供应商', '协调', '执行', '复盘', '沟通'];
+
+  /* ---------- 工具 ---------- */
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function toISODate(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function todayStr() { return toISODate(new Date()); }
+  function daysUntil(s) { if (!s) return null; return Math.round((new Date(s + 'T00:00:00') - new Date(todayStr() + 'T00:00:00')) / 86400000); }
+  function daysSince(s) { if (!s) return null; return -daysUntil(s); }
+  function safeUrl(u) { if (!u) return ''; return /^https?:\/\//i.test(u) ? u : ''; }
+  function uid() { return 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function kwHit(text, kw) {
+    if (/^[A-Za-z0-9. ]+$/.test(kw)) {
+      try { return new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(text); }
+      catch (e) { return text.indexOf(kw.toLowerCase()) !== -1; }
+    }
+    return text.indexOf(kw) !== -1;
+  }
+
+  /* ---------- 存储层 ---------- */
+  function loadJSON(key, fallback) {
+    try { var v = JSON.parse(localStorage.getItem(key)); if (v !== null && v !== undefined) return v; } catch (e) {}
+    return fallback;
+  }
+  function saveJSON(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { alert('保存失败：浏览器存储空间不足或被禁用'); } }
+  function loadJobs() { return loadJSON(STORAGE_KEY, null); }
+  function saveJobs() {
+    // 本地刚修改过的岗位打上时间戳（供云端合并时判断新旧）
+    if (cloud.snapshot) {
+      var now = Date.now();
+      jobs.forEach(function (j) {
+        var known = cloud.snapshot.jobs[j.id];
+        if (!known || known.json !== jobJson(j)) j._ut = now;
+      });
+    }
+    saveJSON(STORAGE_KEY, jobs);
+    scheduleCloudPush();
+  }
+
+  /* ---------- 初始化数据（真实数据 + 兼容旧示例数据迁移） ---------- */
+  function bootstrapJobs() {
+    var stored = loadJobs();
+    if (!Array.isArray(stored)) {
+      // 首次打开：播种预置岗位
+      jobs = JSON.parse(JSON.stringify(INITIAL_JOBS));
+    } else {
+      // 已有数据（包括空数组=用户清空过）：本地为权威，不回补预置岗位，
+      // 否则删除过的岗位会在重开页面时"复活"（v7 修复）
+      jobs = stored.filter(function (j) { return !j.sample; });
+    }
+    var meta = loadJSON(META_KEY, {});
+    // 合并 AI 匹配结果（不覆盖用户的投递状态等改动，只刷匹配度与理由，仅执行一次）
+    if (meta.matchMerged !== 2) {
+      var byId = {};
+      INITIAL_JOBS.forEach(function (j) { byId[j.id] = j; });
+      jobs.forEach(function (j) {
+        var src = byId[j.id];
+        if (src) { j.match = src.match; j.matchNote = src.matchNote; }
+      });
+      meta.matchMerged = 2;
+      saveJSON(META_KEY, meta);
+    }
+    // v9 状态细分迁移：旧版本只区分「笔试测评」「面试」，统一映射到新状态集（一次性）
+    if (meta.v9Migrated !== true) {
+      var migrated = 0;
+      jobs.forEach(function (j) {
+        if (j.status === '笔试测评') { j.status = '待笔试'; migrated++; }
+        else if (j.status === '面试') { j.status = '一面'; migrated++; }
+      });
+      meta.v9Migrated = true;
+      saveJSON(META_KEY, meta);
+      if (migrated > 0) console.log('[v9] 已迁移', migrated, '条岗位到新状态集');
+    }
+    // v11 状态机收紧：把 in-progress 中间态收编到「已完成」，并把「终止」→「已终止」
+    if (meta.v11Migrated !== true) {
+      var m11 = 0;
+      jobs.forEach(function (j) {
+        if (j.status === '笔试' || j.status === '测评中') { j.status = '笔试已完成'; m11++; }
+        else if (j.status === '一面') { j.status = '一面已完成'; m11++; }
+        else if (j.status === '二面') { j.status = '二面已完成'; m11++; }
+        else if (j.status === '三面') { j.status = '三面已完成'; m11++; }
+        else if (j.status === '终止') { j.status = '已终止'; m11++; }
+        // 兜底：任何未知状态打回「待投递」，避免渲染时找不到颜色
+        if (STATUSES.indexOf(j.status) < 0) { j.status = '待投递'; m11++; }
+      });
+      meta.v11Migrated = true;
+      saveJSON(META_KEY, meta);
+      if (m11 > 0) console.log('[v11] 已迁移', m11, '条岗位到 12 态模型');
+    }
+    saveJobs();
+    seedResume();
+  }
+  /* 首次使用时预填 AI 整理的简历画像（用户已保存过则不动） */
+  function seedResume() {
+    var cur = loadJSON(RESUME_KEY, '');
+    if ((cur === '' || cur === null) && DEFAULT_RESUME) {
+      saveJSON(RESUME_KEY, DEFAULT_RESUME);
+    }
+  }
+
+  /* ---------- 计算层 ---------- */
+  var FOLLOWED_STATUSES = ['已投递', '待笔试', '笔试已完成', '待一面', '一面已完成', '待二面', '二面已完成', '待三面', '三面已完成', '待实习', '实习中'];
+  function getTodayGroups() {
+    var g = { overdue: [], dueToday: [], dueSoon: [], followUp: [], examSoon: [], examNoDate: [] };
+    for (var i = 0; i < jobs.length; i++) {
+      var j = jobs[i];
+      if (j.status === '待投递') {
+        var d = daysUntil(j.deadline);
+        if (d !== null) {
+          if (d < 0) g.overdue.push(j);
+          else if (d === 0) g.dueToday.push(j);
+          else if (d <= 3) g.dueSoon.push(j);
+        }
+      } else if (j.status === '待笔试') {
+        // 笔试临期：距笔试时间 ≤2 天提醒；未填日期且超过 5 天未跟进则提示去补信息
+        var ed = daysUntil(j.writtenExamDate);
+        if (ed !== null) {
+          if (ed >= 0 && ed <= 2) g.examSoon.push(j);
+        } else {
+          var since = daysSince(j.lastUpdate || j.appliedDate || j.createdAt);
+          if (since !== null && since > 5) g.examNoDate.push(j);
+        }
+      }
+      if (FOLLOWED_STATUSES.indexOf(j.status) >= 0) {
+        var since2 = daysSince(j.lastUpdate || j.appliedDate || j.createdAt);
+        if (since2 !== null && since2 > FOLLOW_UP_DAYS) g.followUp.push(j);
+      }
+    }
+    return g;
+  }
+  function todayCount() {
+    var g = getTodayGroups();
+    return g.overdue.length + g.dueToday.length + g.dueSoon.length + g.followUp.length + g.examSoon.length + g.examNoDate.length;
+  }
+  function filteredJobs() {
+    var q = state.search.trim().toLowerCase();
+    return jobs.filter(function (j) {
+      if (state.statusFilter !== '全部状态' && j.status !== state.statusFilter) return false;
+      if (state.matchFilter !== '全部匹配度' && (j.match || '未评') !== state.matchFilter) return false;
+      if (q) {
+        var hay = [j.company, j.position, j.tags ? j.tags.join(',') : '', j.jd || ''].join(' ').toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    }).sort(function (a, b) {
+      var da = a.deadline || '9999-12-31', db = b.deadline || '9999-12-31';
+      if (da !== db) return da < db ? -1 : 1;
+      return (b.createdAt || '') > (a.createdAt || '') ? 1 : -1;
+    });
+  }
+  function analyzeJob(j, resumeLower) {
+    var jdText = ((j.jd || '') + ' ' + (j.position || '')).toLowerCase();
+    var found = LEXICON.filter(function (k) { return kwHit(jdText, k); });
+    if (!found.length) return null;
+    var matched = found.filter(function (k) { return kwHit(resumeLower, k); });
+    var missing = found.filter(function (k) { return !kwHit(resumeLower, k); });
+    return { total: found.length, matched: matched, missing: missing, score: matched.length / found.length };
+  }
+  function levelOf(score) { return score >= 0.6 ? '高' : (score >= 0.3 ? '中' : '低'); }
+
+  /* ---------- 渲染层 ---------- */
+  function deadlineChip(j) {
+    if (!j.deadline) return '';
+    var d = daysUntil(j.deadline);
+    var cls = 'chip', txt = '截止 ' + j.deadline.slice(5);
+    if (j.status === '待投递') {
+      if (d < 0) { cls += ' red'; txt = '已逾期 ' + Math.abs(d) + ' 天'; }
+      else if (d === 0) { cls += ' red'; txt = '今天截止'; }
+      else if (d <= 3) { cls += ' amber'; txt = d + ' 天后截止'; }
+    }
+    return '<span class="' + cls + '">' + txt + '</span>';
+  }
+  function matchBadge(j) {
+    var m = j.match || '未评';
+    return '<span class="badge" style="background:' + MATCH_COLOR[m] + '1A;color:' + MATCH_COLOR[m] + '"' + (j.matchNote ? ' title="' + esc(j.matchNote) + '"' : '') + '>匹配:' + esc(m) + '</span>';
+  }
+  function matchNoteHtml(j) {
+    if (!j.matchNote || j.match === '未评') return '';
+    return '<div class="note">AI 匹配：' + esc(j.matchNote) + '</div>';
+  }
+  function statusBadge(j) {
+    return '<span class="badge" style="background:' + STATUS_COLOR[j.status] + '1A;color:' + STATUS_COLOR[j.status] + '">' + esc(j.status) + '</span>';
+  }
+  function linkHtml(j) {
+    var u = safeUrl(j.url);
+    if (!u) return '';
+    return '<a class="link-btn" href="' + esc(u) + '" target="_blank" rel="noopener">投递链接<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg></a>';
+  }
+  function tagChips(j) {
+    if (!j.tags || !j.tags.length) return '';
+    return j.tags.map(function (t) { return '<span class="chip">' + esc(t) + '</span>'; }).join('');
+  }
+  function noteHtml(j) {
+    return j.note ? '<div class="note">备注：' + esc(j.note) + '</div>' : '';
+  }
+
+  function renderBackupHint() {
+    var el = $('backupHint');
+    var meta = loadJSON(META_KEY, {});
+    if (jobs.length >= 30 && !meta.backupDismissed) {
+      el.innerHTML = '<div class="banner warn">数据已积累 ' + jobs.length + ' 条，建议导出 JSON 备份以防浏览器清缓存丢失。<button class="btn sm" data-action="dismiss-backup">知道了</button><button class="btn sm primary" data-action="do-export">立即导出</button></div>';
+    } else {
+      el.innerHTML = '';
+    }
+  }
+
+  function renderFollowBanner() {
+    var g = getTodayGroups();
+    var n = g.overdue.length + g.dueToday.length + g.dueSoon.length + g.followUp.length + g.examSoon.length + g.examNoDate.length;
+    var box = $('followBanner');
+    if (!n) {
+      box.innerHTML = '<div class="banner info">一切正常：没有逾期、临期或超时未跟进的投递。</div>';
+      return;
+    }
+    var meta = loadJSON(META_KEY, {});
+    var open = !!meta.followOpen;
+    var parts = [];
+    if (g.overdue.length) parts.push('<b>' + g.overdue.length + '</b> 个已逾期');
+    if (g.dueToday.length) parts.push('<b>' + g.dueToday.length + '</b> 个今天截止');
+    if (g.dueSoon.length) parts.push('<b>' + g.dueSoon.length + '</b> 个 3 天内截止');
+    if (g.examSoon.length) parts.push('<b>' + g.examSoon.length + '</b> 个笔试/测评临期');
+    if (g.examNoDate.length) parts.push('<b>' + g.examNoDate.length + '</b> 个待笔试未填时间');
+    if (g.followUp.length) parts.push('<b>' + g.followUp.length + '</b> 个投递超 ' + FOLLOW_UP_DAYS + ' 天无进展');
+    var html = '<div class="banner warn">'
+      + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B25E09" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>'
+      + '<span>跟进提醒：' + parts.join(' · ') + '</span>'
+      + '<button class="btn sm" data-action="toggle-follow">' + (open ? '收起' : '展开处理') + '</button></div>'
+      + '<div class="follow-detail' + (open ? ' open' : '') + '" id="followDetail"></div>';
+    box.innerHTML = html;
+    var d = '';
+    function group(title, arr, isRed, btnLabel, action) {
+      if (!arr.length) return '';
+      var h = '<div class="section-title">' + title + ' <span class="num">' + arr.length + ' 条</span></div>';
+      arr.forEach(function (j) {
+        var extra = '';
+        if (j.writtenExamDate) extra += '<span class="chip">笔试 ' + j.writtenExamDate.slice(5) + '</span>';
+        h += '<div class="item-row' + (isRed ? ' overdue' : '') + '">'
+          + '<div class="main"><div class="co">' + esc(j.company) + '</div>'
+          + '<div class="pos">' + esc(j.position) + '</div>'
+          + '<div class="meta">' + statusBadge(j) + matchBadge(j) + deadlineChip(j) + extra + linkHtml(j) + '</div>'
+          + noteHtml(j) + '</div>'
+          + '<button class="btn primary sm" data-action="' + action + '" data-id="' + j.id + '">' + btnLabel + '</button>'
+          + '</div>';
+      });
+      return h;
+    }
+    d += group('已逾期，抓紧处理', g.overdue, true, '去投递', 'go-apply');
+    d += group('今天截止', g.dueToday, true, '去投递', 'go-apply');
+    d += group('3 天内截止', g.dueSoon, false, '去投递', 'go-apply');
+    d += group('笔试 / 测评临期（≤2 天），赶紧准备', g.examSoon, true, '已填好', 'exam-confirm');
+    d += group('待笔试但未填时间，点编辑补笔试日期', g.examNoDate, false, '去补时间', 'exam-fill');
+    d += group('投递后超过 ' + FOLLOW_UP_DAYS + ' 天没动静，建议跟进', g.followUp, false, '已跟进', 'follow');
+    $('followDetail').innerHTML = d;
+  }
+
+  /* ---------- 笔试状态聚焦卡（首页一眼可见） ---------- */
+  function renderExamOverview() {
+    var box = $('examOverview');
+    if (!box) return;
+
+    var pending = []; // 待笔试 / 笔试 / 测评中
+    var done = [];    // 笔试已完成
+    jobs.forEach(function (j) {
+      if (j.status === '待笔试') pending.push(j);
+      else if (j.status === '笔试已完成') done.push(j);
+    });
+
+    var byDateAsc = function (a, b) {
+      var ad = a.writtenExamDate || '', bd = b.writtenExamDate || '';
+      if (ad && bd) return ad < bd ? -1 : ad > bd ? 1 : 0;
+      if (ad) return -1;
+      if (bd) return 1;
+      return 0;
+    };
+    pending.sort(function (a, b) {
+      var cmp = byDateAsc(a, b);
+      if (cmp !== 0) return cmp;
+      var o = { '待笔试': 0 };
+      return (o[a.status] - o[b.status]) || 0;
+    });
+    done.sort(byDateAsc);
+
+    // 没有就完全不渲染（避免空状态横幅占首页）
+    if (pending.length === 0 && done.length === 0) { box.innerHTML = ''; return; }
+
+    function head(label, cnt, side) {
+      var icoP = '<svg viewBox="0 0 24 24" fill="none" stroke="#B25E09" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>';
+      var icoD = '<svg viewBox="0 0 24 24" fill="none" stroke="#0891B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>';
+      return '<div class="exam-col-head ' + side + '">'
+        + '<span class="ico">' + (side === 'pending' ? icoP : icoD) + '</span>'
+        + '<span>' + esc(label) + '</span>'
+        + '<span class="cnt">' + cnt + ' 个岗位</span>'
+        + '</div>';
+    }
+
+    function item(j) {
+      var nextStatus = j.status === '待笔试'
+        ? '笔试已完成'
+        : '一面已完成';
+      var nextLabel = j.status === '笔试已完成' ? '推进到 一面' : '标记为 笔试已完成';
+      var ed = j.writtenExamDate || '';
+      var dateHtml = '';
+      if (j.status !== '笔试已完成') {
+        if (ed) {
+          var d = daysUntil(ed);
+          var dayTxt = '';
+          if (d < 0) dayTxt = '（已过 ' + (-d) + ' 天）';
+          else if (d === 0) dayTxt = '（今天）';
+          else if (d <= 2) dayTxt = '（剩 <span class="soon">' + d + ' 天</span>，临期）';
+          else dayTxt = '（剩 ' + d + ' 天）';
+          dateHtml = '<span class="chip" style="background:#FFF1D6;color:#8A5A00">笔试 ' + esc(ed.slice(5)) + '</span><span class="hint">' + dayTxt + '</span>';
+        } else {
+          dateHtml = '<span class="empty">待补充笔试时间</span>';
+        }
+      } else {
+        dateHtml = '<span class="hint">等待面试通知 · 可推进</span>';
+      }
+
+      var url = safeUrl(j.url);
+      var linkHtml = url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener" class="link" title="打开投递链接"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg></a>' : '';
+
+      var fillBtn = '';
+      if (j.status === '待笔试' && !ed) {
+        fillBtn = '<button class="btn sm" data-action="exam-fill" data-id="' + j.id + '">补笔试时间</button>';
+      } else if (j.status === '待笔试' && ed) {
+        fillBtn = '<button class="btn sm" data-action="exam-confirm" data-id="' + j.id + '">已考完</button>';
+      }
+
+      return '<div class="exam-item">'
+        + '<div class="main">'
+          + '<div class="co">' + esc(j.company || '未命名公司') + starBtn(j) + '</div>'
+          + '<div class="pos">' + esc(j.position || '未命名岗位') + linkHtml + '</div>'
+        + '</div>'
+        + '<div class="meta">'
+          + '<span class="chip" style="background:' + STATUS_COLOR[j.status] + '1A;color:' + STATUS_COLOR[j.status] + '">' + esc(j.status) + '</span>'
+          + dateHtml
+        + '</div>'
+        + '<div class="ops">'
+          + fillBtn
+          + '<button class="btn sm primary" data-action="exam-next" data-id="' + j.id + '" data-next="' + esc(nextStatus) + '">' + esc(nextLabel) + '</button>'
+        + '</div>'
+      + '</div>';
+    }
+
+    function col(side, label, arr) {
+      return '<div class="exam-col ' + side + '">'
+        + head(label, arr.length, side)
+        + '<div class="exam-list">' + (arr.length ? arr.map(item).join('') : '<div class="exam-empty">暂无此状态的岗位</div>') + '</div>'
+        + '</div>';
+    }
+
+    box.innerHTML = '<div class="exam-overview">'
+      + col('pending', '待笔试 / 笔试进行中', pending)
+      + col('done', '笔试已完成 · 待推进面试', done)
+      + '</div>';
+  }
+
+  function renderStats() {
+    var counts = {};
+    var applied = 0, interviews = 0, offers = 0, weekNew = 0;
+    STATUSES.forEach(function (s) { counts[s] = 0; });
+    jobs.forEach(function (j) {
+      counts[j.status] = (counts[j.status] || 0) + 1;
+      if (j.status !== '待投递' && j.status !== '已终止') applied++;
+      if (j.status === '一面已完成' || j.status === '二面已完成' || j.status === '三面已完成' || j.status === 'Offer') interviews++;
+      if (j.status === 'Offer') offers++;
+      var w = daysSince(j.createdAt);
+      if (w !== null && w <= 7) weekNew++;
+    });
+    $('statsCards').innerHTML =
+      '<div class="stat"><div class="v">' + jobs.length + '</div><div class="l">岗位总数</div></div>'
+      + '<div class="stat"><div class="v" style="color:#2563EB">' + applied + '</div><div class="l">已投递</div></div>'
+      + '<div class="stat"><div class="v" style="color:#0D9488">' + interviews + '</div><div class="l">面试及以上</div></div>'
+      + '<div class="stat"><div class="v" style="color:#16A34A">' + offers + '</div><div class="l">Offer</div></div>'
+      + '<div class="stat"><div class="v" style="color:#7C3AED">' + weekNew + '</div><div class="l">本周新增</div></div>';
+
+    var max = 1;
+    STATUSES.forEach(function (s) { if (counts[s] > max) max = counts[s]; });
+    var bars = '<div class="section-title">投递漏斗</div>';
+    STATUSES.forEach(function (s) {
+      bars += '<div class="bar-row"><span class="bl">' + s + '</span>'
+        + '<span class="bar"><i style="width:' + Math.round(counts[s] / max * 100) + '%;background:' + STATUS_COLOR[s] + '"></i></span>'
+        + '<span class="bv">' + counts[s] + '</span></div>';
+    });
+    $('statusBars').innerHTML = bars;
+  }
+
+  function renderList() {
+    var arr = filteredJobs();
+    if (!arr.length) {
+      $('jobList').innerHTML = '<div class="empty">' + (jobs.length ? '没有符合条件的岗位，换个筛选条件试试。' : '岗位库是空的，点右上角「添加岗位」，或用「导入恢复」载入数据。') + '</div>';
+      return;
+    }
+    var html = '';
+    arr.forEach(function (j) {
+      html += '<div class="item-row">'
+        + '<div class="main"><div class="co">' + esc(j.company) + '</div>'
+        + '<div class="pos">' + esc(j.position) + '</div>'
+        + '<div class="meta">' + statusBadge(j) + matchBadge(j) + deadlineChip(j) + tagChips(j) + linkHtml(j) + '</div>'
+        + (j.jd ? '<div class="pos" style="margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + esc(j.jd) + '</div>' : '')
+        + matchNoteHtml(j) + noteHtml(j) + '</div>'
+        + '<button class="btn sm" data-action="edit" data-id="' + j.id + '">编辑</button>'
+        + '<button class="btn sm danger" data-action="delete" data-id="' + j.id + '">删除</button>'
+        + '</div>';
+    });
+    $('jobList').innerHTML = html;
+  }
+
+  // v11 看板：pipeline + Tab + 公司聚合 + inline 状态/备注
+  var KB_TABS = ['总览'].concat(STATUSES); // 13 个 Tab
+  function renderKanban() {
+    var g = getTodayGroups();
+    var followIds = {};
+    g.followUp.forEach(function (j) { followIds[j.id] = true; });
+    // 按状态统计
+    var byStatus = {};
+    STATUSES.forEach(function (s) { byStatus[s] = []; });
+    jobs.forEach(function (j) {
+      var s = STATUSES.indexOf(j.status) >= 0 ? j.status : '待投递';
+      byStatus[s].push(j);
+    });
+    // pipeline 节点颜色（单一来源：STATUS_COLOR）
+    var pColor = STATUS_COLOR;
+    var html = '';
+    // === Pipeline ===
+    html += '<div class="pipeline">';
+    STATUSES.forEach(function (s, i) {
+      var n = byStatus[s].length;
+      var nodeCls = 'pipeline-node' + (n === 0 ? ' empty' : '');
+      if (state.boardTab === s) nodeCls += ' active';
+      var color = pColor[s] || '#C9CDD4';
+      html += '<div class="' + nodeCls + '" data-action="board-tab" data-board-tab="' + esc(s) + '" style="--node-color:' + color + '">'
+        + '<div class="n">' + n + '</div>'
+        + '<div class="l">' + esc(s) + '</div>'
+        + '<div class="bar"></div>'
+        + '</div>';
+      if (i < STATUSES.length - 1) {
+        // 终止前不画箭头
+        if (s !== '已终止') html += '<div class="pipeline-arrow">›</div>';
+      }
+    });
+    html += '</div>';
+    // === Tab 切换 ===
+    html += '<div class="board-tabs">';
+    KB_TABS.forEach(function (t) {
+      var cnt = t === '总览' ? jobs.length : (byStatus[t] ? byStatus[t].length : 0);
+      var cls = 'board-tab' + (state.boardTab === t ? ' active' : '');
+      html += '<div class="' + cls + '" data-action="board-tab" data-board-tab="' + esc(t) + '">' + esc(t) + '<span class="cnt">' + cnt + '</span></div>';
+    });
+    html += '</div>';
+    // === 内容区 ===
+    if (state.boardTab === '总览') {
+      html += renderOverview(byStatus, followIds);
+    } else {
+      html += renderTabList(state.boardTab, byStatus[state.boardTab] || [], followIds);
+    }
+    $('kanban').innerHTML = html;
+  }
+
+  // 总览页：每个状态一个 mini 卡，含 pipeline 概要 + 关键提醒
+  function renderOverview(byStatus, followIds) {
+    var g = getTodayGroups();
+    var html = '<div class="overview-grid">';
+    STATUSES.forEach(function (s) {
+      var list = byStatus[s] || [];
+      var color = STATUS_COLOR[s] || '#C9CDD4';
+      var cls = 'ov-stage' + (list.length === 0 ? ' empty' : '');
+      // 整个卡片可点 → 进入对应 Tab
+      html += '<div class="' + cls + '" data-action="board-tab" data-board-tab="' + esc(s) + '" style="--stage-color:' + color + '">';
+      html += '<h4><span class="lbl">' + esc(s) + '</span><span class="cnt">' + list.length + '</span><svg class="to-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></h4>';
+      var showN = Math.min(list.length, 5);
+      for (var i = 0; i < showN; i++) {
+        var j = list[i];
+        var staleTag = followIds[j.id] ? '<span class="stale-tag">无进展</span>' : '';
+        var soonTag = '';
+        if ((s === '待笔试') && j.writtenExamDate) {
+          var ed = daysUntil(j.writtenExamDate);
+          if (ed !== null && ed >= 0 && ed <= 2) soonTag = '<span class="soon-tag">' + ed + '天</span>';
+        }
+        html += '<div class="mini">'
+          + '<span class="co">' + esc(j.company) + '</span>'
+          + '<span class="pos">' + esc(j.position || '') + '</span>'
+          + staleTag + soonTag
+          + '</div>';
+      }
+      if (list.length > showN) {
+        html += '<div class="more">还有 ' + (list.length - showN) + ' 个 · 点此查看 →</div>';
+      } else if (list.length > 0) {
+        html += '<div class="more">点击查看详情 →</div>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  // 单 Tab 列表：公司聚合 + 卡片
+  function renderTabList(status, list, followIds) {
+    if (list.length === 0) {
+      return '<div class="board-empty">该状态暂无岗位。<br>在其他 Tab 流转过来的岗位会出现在这里。</div>';
+    }
+    // 排序：按公司名分组
+    list.sort(function (a, b) {
+      var ca = a.company || '', cb = b.company || '';
+      if (ca !== cb) return ca < cb ? -1 : 1;
+      var ta = a.lastUpdate || a.appliedDate || a.createdAt || '';
+      var tb = b.lastUpdate || b.appliedDate || b.createdAt || '';
+      return ta > tb ? -1 : (ta < tb ? 1 : 0);
+    });
+    // 分组
+    var groups = [];
+    var byCo = {};
+    list.forEach(function (j) {
+      var co = j.company || '未填';
+      if (!byCo[co]) {
+        byCo[co] = { name: co, jobs: [] };
+        groups.push(byCo[co]);
+      }
+      byCo[co].jobs.push(j);
+    });
+    var mo = { '高': 0, '中': 1, '低': 2, '未评': 3 };
+    var html = '';
+    groups.forEach(function (g) {
+      // 公司标题：聚合徽章
+      var matchCnt = { '高': 0, '中': 0, '低': 0, '未评': 0 };
+      g.jobs.forEach(function (jj) { matchCnt[jj.match || '未评']++; });
+      var matchChips = '';
+      ['高', '中', '低', '未评'].forEach(function (m) {
+        if (matchCnt[m] > 0) matchChips += '<span class="chip" style="background:' + MATCH_COLOR[m] + '22;color:' + MATCH_COLOR[m] + '">' + m + '×' + matchCnt[m] + '</span>';
+      });
+      html += '<div class="co-group">';
+      html += '<div class="co-group-head">'
+        + '<span class="co-name">' + esc(g.name) + '</span>'
+        + '<span class="co-cnt">' + g.jobs.length + ' 个岗位</span>'
+        + '<span class="co-meta">' + matchChips + '</span>'
+        + '</div>';
+      html += '<div class="co-group-cards">';
+      g.jobs.forEach(function (j) {
+        html += renderJobCard(j, status, followIds);
+      });
+      html += '</div></div>';
+    });
+    return html;
+  }
+
+  // 统一卡片渲染（看板/列表都共用）
+  function renderJobCard(j, forcedStatus, followIds) {
+    var cls = 'job-card';
+    if (j.match === '高' && j.status === '待投递') cls += ' hot';
+    if (followIds && followIds[j.id]) cls += ' stale';
+    if (j.status === '已终止') cls += ' terminated';
+    var status = j.status;
+    var sc = STATUS_COLOR[status] || '#8A9099';
+    var staleNote = (followIds && followIds[j.id])
+      ? '<div class="days">已 ' + daysSince(j.lastUpdate || j.appliedDate || j.createdAt) + ' 天无进展，建议跟进</div>'
+      : '';
+    // 状态徽章（可点击下拉）
+    var badge = '<span class="status-badge" data-action="status-pick" data-id="' + j.id + '" style="background:' + sc + '1A;color:' + sc + '">'
+      + '<span class="dot" style="background:' + sc + '"></span>'
+      + esc(status) + '<span class="caret">▾</span></span>';
+    var match = matchBadge(j);
+    var deadline = deadlineChip(j);
+    // 投递时间角标（已投出才有值）
+    var appliedChip = j.appliedDate ? '<span class="chip">投递 ' + esc(j.appliedDate.slice(5)) + '</span>' : '';
+    var url = safeUrl(j.url);
+    var canAdvance = j.status !== '已终止' && j.status !== 'Offer';
+    var followActions = '';
+    if (followIds && followIds[j.id]) {
+      var nextIdx = ADVANCE_ORDER.indexOf(j.status);
+      var nextStatus = (nextIdx >= 0 && nextIdx < ADVANCE_ORDER.length - 1) ? ADVANCE_ORDER[nextIdx + 1] : null;
+      followActions = '<div class="follow-actions">'
+        + '<button class="text-btn" data-action="follow" data-id="' + j.id + '">已跟进</button>'
+        + (nextStatus ? '<button class="text-btn primary" data-action="advance" data-id="' + j.id + '" data-next="' + esc(nextStatus) + '">→ ' + esc(nextStatus) + '</button>' : '')
+        + '<button class="text-btn danger" data-action="terminate" data-id="' + j.id + '">已终止</button>'
+        + '</div>';
+    }
+    var noteHtmlBlock = '<div class="note-inline' + (j.note ? '' : ' empty') + '" data-action="note-edit" data-id="' + j.id + '">'
+      + esc(j.note || '点此添加备注…')
+      + '</div>';
+    return '<div class="' + cls + '" data-job-id="' + j.id + '">'
+      + '<div class="head"><span class="co">' + esc(j.company) + '</span>' + badge + '</div>'
+      + '<div class="pos">' + esc(j.position || '') + '</div>'
+      + staleNote
+      + noteHtmlBlock
+      + '<div class="foot">' + match + appliedChip + deadline
+      + '<span class="spacer"></span>'
+      + (url ? '<a class="icon-btn" href="' + esc(url) + '" target="_blank" rel="noopener" title="打开投递链接"><svg viewBox="0 0 24 24" fill="none" stroke="#2F54EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg></a>' : '')
+      + '<button class="icon-btn" data-action="edit" data-id="' + j.id + '" title="编辑"><svg viewBox="0 0 24 24" fill="none" stroke="#5A6068" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>'
+      + (canAdvance && !followActions ? '<button class="icon-btn" data-action="advance" data-id="' + j.id + '" title="流转到下一阶段"><svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>' : '')
+      + '</div>'
+      + followActions
+      + '</div>';
+  }
+
+  function renderMatchTab() {
+    var c = { '高': 0, '中': 0, '低': 0, '未评': 0 };
+    jobs.forEach(function (j) { c[j.match || '未评']++; });
+    $('matchStats').innerHTML =
+      '<div class="stat"><div class="v">' + jobs.length + '</div><div class="l">岗位总数</div></div>'
+      + '<div class="stat"><div class="v" style="color:#16A34A">' + c['高'] + '</div><div class="l">高匹配</div></div>'
+      + '<div class="stat"><div class="v" style="color:#B25E09">' + c['中'] + '</div><div class="l">中匹配</div></div>'
+      + '<div class="stat"><div class="v" style="color:#6B7280">' + c['低'] + '</div><div class="l">低匹配</div></div>'
+      + '<div class="stat"><div class="v" style="color:#8A9099">' + c['未评'] + '</div><div class="l">未评</div></div>';
+  }
+
+  function renderResumeTab() {
+    var resume = loadJSON(RESUME_KEY, '');
+    if ($('resumeText').value !== resume && document.activeElement !== $('resumeText')) {
+      $('resumeText').value = resume;
+    }
+    $('resumeCount').textContent = resume ? '已保存 ' + resume.length + ' 字' : '尚未保存简历';
+
+    var sel = $('tailorSelect');
+    var opts = '<option value="">— 选择岗位 —</option>';
+    jobs.slice().sort(function (a, b) { return (a.company || '').localeCompare(b.company || ''); }).forEach(function (j) {
+      opts += '<option value="' + j.id + '">' + esc(j.company + ' · ' + j.position) + '</option>';
+    });
+    sel.innerHTML = opts;
+    if (state.tailorId) sel.value = state.tailorId;
+    renderTailorInfo();
+  }
+
+  function renderTailorInfo() {
+    var box = $('tailorInfo');
+    var j = state.tailorId ? findJob(state.tailorId) : null;
+    if (!j) { box.innerHTML = '<div class="empty" style="padding:12px">选择岗位后，这里会显示 JD 要点与简历差距分析</div>'; return; }
+    var resume = loadJSON(RESUME_KEY, '').toLowerCase();
+    var html = '<div class="co" style="font-weight:600">' + esc(j.company) + ' · ' + esc(j.position) + '</div>';
+    if (j.jd) {
+      html += '<div class="pos" style="margin-top:4px;max-height:120px;overflow-y:auto;background:#F7F9FC;border-radius:8px;padding:8px 10px;font-size:12px">' + esc(j.jd) + '</div>';
+    }
+    if (resume) {
+      var r = analyzeJob(j, resume);
+      if (r) {
+        html += '<div class="kw-wrap">'
+          + '<span class="chip green">已覆盖 ' + r.matched.length + '/' + r.total + '</span>'
+          + r.matched.map(function (k) { return '<span class="chip green">' + esc(k) + '</span>'; }).join('')
+          + (r.missing.length ? r.missing.map(function (k) { return '<span class="chip gray">' + esc(k) + '</span>'; }).join('') : '')
+          + '</div>'
+          + '<div class="hint" style="font-size:11px;color:#8A9099;margin-top:4px">绿色=简历已覆盖 · 灰色(划线)=JD要求但简历未体现，定制时优先从真实经历中挖掘这部分素材</div>';
+      } else {
+        html += '<div class="hint" style="font-size:11px;color:#8A9099;margin-top:4px">该岗位 JD 未识别到关键词，建议直接让 AI 深度分析</div>';
+      }
+    } else {
+      html += '<div class="hint" style="font-size:11px;color:#B25E09;margin-top:4px">先在上方保存简历，才能做差距分析</div>';
+    }
+    box.innerHTML = html;
+  }
+
+  function refreshAll() {
+    renderBackupHint();
+    renderFollowBanner();
+    renderExamOverview();
+    renderStats();
+    renderList();
+    renderKanban();
+    renderCompany();
+    renderMatchTab();
+    renderResumeTab();
+  }
+
+  /* ---------- 公司总览 ---------- */
+  function starBtn(j) {
+    var on = !!j.interest;
+    return '<button class="star-btn" data-action="toggle-interest" data-id="' + j.id + '" title="' + (on ? '取消意向' : '标记为意向岗位') + '">'
+      + '<svg viewBox="0 0 24 24" fill="' + (on ? '#F5A623' : 'none') + '" stroke="' + (on ? '#F5A623' : '#8A9099') + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg></button>';
+  }
+  function companyAgg() {
+    var map = {};
+    jobs.forEach(function (j) {
+      var k = (j.company || '未命名公司').trim() || '未命名公司';
+      if (!map[k]) map[k] = { company: k, items: [], total: 0, pending: 0, applied: 0, testing: 0, offer: 0, dead: 0, interest: 0, nearest: '' };
+      var g = map[k];
+      g.items.push(j); g.total++;
+      if (j.interest) g.interest++;
+      if (j.status === '待投递') g.pending++;
+      else if (j.status === '已投递') g.applied++;
+      else if (j.status === '待笔试' || j.status === '笔试已完成' || j.status === '待一面' || j.status === '一面已完成' || j.status === '待二面' || j.status === '二面已完成' || j.status === '待三面' || j.status === '三面已完成') g.testing++;
+      else if (j.status === 'Offer') g.offer++;
+      else if (j.status === '已终止') g.dead++;
+      if (j.deadline) {
+        var d = daysUntil(j.deadline);
+        if (d !== null && d >= 0 && (!g.nearest || j.deadline < g.nearest)) g.nearest = j.deadline;
+      }
+    });
+    return map;
+  }
+  function renderCompany() {
+    var map = companyAgg();
+    var companies = Object.keys(map).length;
+    var withApplied = 0, interestTotal = 0, pendingTotal = 0;
+    Object.keys(map).forEach(function (k) {
+      var g = map[k];
+      if (g.applied + g.testing + g.offer > 0) withApplied++;
+      interestTotal += g.interest;
+      pendingTotal += g.pending;
+    });
+    $('companyStats').innerHTML =
+      '<div class="stat"><div class="v">' + companies + '</div><div class="l">公司总数</div></div>'
+      + '<div class="stat"><div class="v" style="color:#185FA5">' + withApplied + '</div><div class="l">已有投递的公司</div></div>'
+      + '<div class="stat"><div class="v" style="color:#0D9488">' + pendingTotal + '</div><div class="l">待投岗位</div></div>'
+      + '<div class="stat"><div class="v" style="color:#F5A623">' + interestTotal + '</div><div class="l">意向岗位（星标）</div></div>';
+
+    var q = (state.coSearch || '').toLowerCase();
+    var arr = Object.keys(map).map(function (k) { return map[k]; }).filter(function (g) {
+      return !q || g.company.toLowerCase().indexOf(q) !== -1;
+    });
+    if (state.coSort === 'deadline') {
+      arr.sort(function (a, b) {
+        var da = a.nearest || '9999-12-31', db = b.nearest || '9999-12-31';
+        return da < db ? -1 : (da > db ? 1 : a.company.localeCompare(b.company, 'zh'));
+      });
+    } else if (state.coSort === 'name') {
+      arr.sort(function (a, b) { return a.company.localeCompare(b.company, 'zh'); });
+    } else {
+      arr.sort(function (a, b) { return b.total - a.total || a.company.localeCompare(b.company, 'zh'); });
+    }
+
+    if (!arr.length) { $('companyList').innerHTML = '<div class="empty">没有匹配的公司。</div>'; return; }
+    var mo = { '高': 0, '中': 1, '低': 2, '未评': 3 };
+    var html = '';
+    arr.forEach(function (g) {
+      var open = !!state.coOpen[g.company];
+      var nearChip = '';
+      if (g.nearest) {
+        var nd = daysUntil(g.nearest);
+        var ncls = 'chip', ntxt = '最近截止 ' + g.nearest.slice(5);
+        if (nd < 0) { ncls += ' red'; ntxt = '已截止 ' + g.nearest.slice(5); }
+        else if (nd <= 3) { ncls += ' red'; ntxt = nd + ' 天后截止'; }
+        else if (nd <= 7) { ncls += ' amber'; ntxt = nd + ' 天后截止'; }
+        nearChip = '<span class="' + ncls + '">' + ntxt + '</span>';
+      }
+      var items = g.items.slice().sort(function (a, b) {
+        var pa = a.status === '待投递' ? 0 : 1, pb = b.status === '待投递' ? 0 : 1;
+        if (pa !== pb) return pa - pb;
+        var ma = mo[a.match || '未评'], mb = mo[b.match || '未评'];
+        if (ma !== mb) return ma - mb;
+        var da = a.deadline || '9999-12-31', db = b.deadline || '9999-12-31';
+        return da < db ? -1 : (da > db ? 1 : 0);
+      });
+      var rows = '';
+      items.forEach(function (j) {
+        var canAdvance = j.status !== '已终止' && j.status !== 'Offer';
+        rows += '<div class="pos-row">'
+          + starBtn(j)
+          + '<div class="main"><div class="co" style="font-size:13px;font-weight:600">' + esc(j.position) + '</div>'
+          + '<div class="meta">' + statusBadge(j) + matchBadge(j) + deadlineChip(j) + '</div>'
+          + '</div>'
+          + (safeUrl(j.url) ? '<a class="icon-btn" href="' + esc(safeUrl(j.url)) + '" target="_blank" rel="noopener" title="打开投递链接"><svg viewBox="0 0 24 24" fill="none" stroke="#2F54EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg></a>' : '')
+          + '<button class="icon-btn" data-action="edit" data-id="' + j.id + '" title="编辑"><svg viewBox="0 0 24 24" fill="none" stroke="#5A6068" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>'
+          + (canAdvance ? '<button class="icon-btn" data-action="advance" data-id="' + j.id + '" title="流转到下一阶段"><svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>' : '')
+          + '</div>';
+      });
+      html += '<div class="co-card' + (open ? ' open' : '') + '">'
+        + '<div class="head">'
+        + '<span class="name">' + esc(g.company) + '</span>'
+        + '<span class="chip blue">共 ' + g.total + ' 个岗位</span>'
+        + (g.interest ? '<span class="chip" style="background:#FFF4E0;color:#B25E09;font-weight:600">意向 ' + g.interest + '</span>' : '')
+        + nearChip
+        + '<span style="flex:1"></span>'
+        + '<button class="btn sm" data-action="toggle-co" data-co="' + esc(g.company) + '">' + (open ? '收起' : '展开') + '</button>'
+        + '</div>'
+        + '<div class="cnt">'
+        + '<span class="chip">待投 ' + g.pending + '</span>'
+        + '<span class="chip">已投 ' + g.applied + '</span>'
+        + '<span class="chip">笔试/面试 ' + g.testing + '</span>'
+        + '<span class="chip green">Offer ' + g.offer + '</span>'
+        + (g.dead ? '<span class="chip gray" style="text-decoration:none">终止 ' + g.dead + '</span>' : '')
+        + '</div>'
+        + '<div class="pos-list">' + rows + '</div>'
+        + '</div>';
+    });
+    $('companyList').innerHTML = html;
+  }
+
+  /* ---------- 表单 ---------- */
+  function openForm(job) {
+    $('formTitle').textContent = job ? '编辑岗位' : '添加岗位';
+    $('fId').value = job ? job.id : '';
+    $('fCompany').value = job ? job.company : '';
+    $('fPosition').value = job ? job.position : '';
+    $('fUrl').value = job ? (job.url || '') : '';
+    $('fDeadline').value = job ? (job.deadline || '') : '';
+    $('fWrittenExamDate').value = job ? (job.writtenExamDate || '') : '';
+    $('fAppliedDate').value = job ? (job.appliedDate || '') : '';
+    $('fMatch').value = job ? (job.match || '未评') : '未评';
+    $('fStatus').value = job ? job.status : '待投递';
+    $('fTags').value = job && job.tags ? job.tags.join(',') : '';
+    $('fJd').value = job ? (job.jd || '') : '';
+    $('fNote').value = job ? (job.note || '') : '';
+    $('fInterest').checked = !!(job && job.interest);
+    $('fSmart').value = '';
+    $('formOverlay').classList.add('show');
+    $('fCompany').focus();
+  }
+  function closeForm() { $('formOverlay').classList.remove('show'); }
+
+  function splitTitleStr(t) {
+    t = String(t || '').trim();
+    var depth = 0, i, ch;
+    for (i = 0; i < t.length; i++) {
+      ch = t[i];
+      if (ch === '（' || ch === '(') depth++;
+      else if (ch === '）' || ch === ')') depth--;
+      else if (ch === '-' && depth === 0) return [t.slice(0, i).trim(), t.slice(i + 1).trim()];
+    }
+    for (i = 0; i < t.length; i++) {
+      ch = t[i];
+      if (ch === '（' || ch === '(') {
+        var inner = t.slice(i + 1);
+        if (inner.slice(-1) === '）' || inner.slice(-1) === ')') inner = inner.slice(0, -1);
+        return [t.slice(0, i).trim(), inner.trim()];
+      }
+    }
+    return [t, ''];
+  }
+
+  function onSmartParse() {
+    var raw = $('fSmart').value.trim();
+    if (!raw) { alert('请先粘贴招聘信息文本'); return; }
+    var lines = raw.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+    var url = '', rest = [];
+    lines.forEach(function (l) {
+      var m = l.match(/https?:\/\/\S+/);
+      if (m && !url) { url = m[0].replace(/[)）,，。]$/, ''); l = l.replace(m[0], '').trim(); }
+      if (!l || /^jd[:：]$/i.test(l)) return;
+      rest.push(l);
+    });
+    if (!url) {
+      var em = raw.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+      if (em) url = 'mailto:' + em[0];
+    }
+    if (rest.length) {
+      var parts = splitTitleStr(rest[0]);
+      if (parts[0]) $('fCompany').value = parts[0];
+      if (parts[1]) $('fPosition').value = parts[1];
+      if (rest.length > 1) $('fJd').value = rest.slice(1).join('\n');
+    }
+    if (url) $('fUrl').value = url;
+    alert('已解析填入，请检查补全后保存（截止日期、状态请如实填写）');
+  }
+
+  function onFormSubmit(e) {
+    e.preventDefault();
+    var id = $('fId').value;
+    var fApplied = $('fAppliedDate').value;
+    var data = {
+      company: $('fCompany').value.trim(),
+      position: $('fPosition').value.trim(),
+      url: $('fUrl').value.trim(),
+      deadline: $('fDeadline').value,
+      writtenExamDate: $('fWrittenExamDate').value,
+      match: $('fMatch').value,
+      status: $('fStatus').value,
+      tags: $('fTags').value.split(/[,，]/).map(function (t) { return t.trim(); }).filter(Boolean),
+      jd: $('fJd').value.trim(),
+      note: $('fNote').value.trim(),
+      interest: $('fInterest').checked
+    };
+    if (!data.company || !data.position) { alert('公司和岗位名称必填'); return; }
+    if (id) {
+      for (var i = 0; i < jobs.length; i++) {
+        if (jobs[i].id === id) {
+          var prev = jobs[i];
+          // 投递时间：表单填写优先；否则保留原值；再否则非待投递状态自动记今天
+          data.appliedDate = fApplied || prev.appliedDate || (data.status !== '待投递' ? todayStr() : '');
+          if (data.status !== prev.status) data.lastUpdate = todayStr();
+          else data.lastUpdate = prev.lastUpdate || data.appliedDate || '';
+          jobs[i] = Object.assign({}, prev, data);
+          break;
+        }
+      }
+    } else {
+      jobs.push(Object.assign({
+        id: uid(), appliedDate: fApplied || (data.status !== '待投递' ? todayStr() : ''),
+        lastUpdate: data.status !== '待投递' ? todayStr() : '', createdAt: todayStr()
+      }, data));
+    }
+    saveJobs();
+    closeForm();
+    refreshAll();
+  }
+
+  /* ---------- 事件处理 ---------- */
+  function findJob(id) {
+    for (var i = 0; i < jobs.length; i++) if (jobs[i].id === id) return jobs[i];
+    return null;
+  }
+  function setStatus(id, status) {
+    var j = findJob(id);
+    if (!j) return;
+    j.status = status;
+    if (status === '已投递' && !j.appliedDate) j.appliedDate = todayStr();
+    j.lastUpdate = todayStr();
+    saveJobs();
+    refreshAll();
+  }
+  function onAction(e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    var action = btn.getAttribute('data-action');
+    var id = btn.getAttribute('data-id');
+    // === 全局 actions（不需要 data-id）===
+    if (action === 'dismiss-backup') {
+      var m = loadJSON(META_KEY, {}); m.backupDismissed = true; saveJSON(META_KEY, m); renderBackupHint(); return;
+    }
+    if (action === 'toggle-follow') {
+      var mf = loadJSON(META_KEY, {}); mf.followOpen = !mf.followOpen; saveJSON(META_KEY, mf);
+      renderFollowBanner(); return;
+    }
+    if (action === 'do-export') { exportJSON(); return; }
+    if (action === 'toggle-co') {
+      var co = btn.getAttribute('data-co');
+      state.coOpen[co] = !state.coOpen[co];
+      renderCompany();
+      return;
+    }
+    if (action === 'board-tab') {
+      // pipeline-node / board-tab / ov-stage 都可以带这个 action，无需 data-id
+      var t = btn.getAttribute('data-board-tab');
+      if (t && state.boardTab !== t) { state.boardTab = t; renderKanban(); return; }
+      if (t) return; // 已处于该 Tab，点击是无效操作但不该报错
+    }
+    // === 岗位级 actions（需要 data-id）===
+    var j = id ? findJob(id) : null;
+    if (!j) return;
+    if (action === 'toggle-interest') {
+      j.interest = !j.interest;
+      saveJobs();
+      refreshAll();
+      return;
+    }
+    if (action === 'go-apply') {
+      var u = safeUrl(j.url);
+      if (u) window.open(u, '_blank', 'noopener');
+      setStatus(j.id, '已投递');
+    } else if (action === 'follow') {
+      j.lastUpdate = todayStr();
+      saveJobs();
+      refreshAll();
+    } else if (action === 'advance') {
+      // 新模型：advance 优先用 data-next（跟进横幅里的「→ 下个状态」按钮）；否则按 ADVANCE_ORDER 自动推进
+      var dataNext = btn.getAttribute('data-next');
+      if (dataNext && STATUSES.indexOf(dataNext) >= 0) {
+        setStatus(j.id, dataNext);
+      } else {
+        var idx = ADVANCE_ORDER.indexOf(j.status);
+        if (idx >= 0 && idx < ADVANCE_ORDER.length - 1) setStatus(j.id, ADVANCE_ORDER[idx + 1]);
+        else if (j.status === '已终止') setStatus(j.id, '已投递');
+      }
+    } else if (action === 'terminate') {
+      if (confirm('确定将「' + j.company + ' · ' + j.position + '」标记为已终止？')) {
+        setStatus(j.id, '已终止');
+      }
+    } else if (action === 'status-pick') {
+      openStatusDropdown(btn, j);
+    } else if (action === 'note-edit') {
+      startNoteEdit(btn, j);
+    } else if (action === 'exam-confirm') {
+      // 「已填好」：把待笔试推进到笔试（标记已确认时间）
+      setStatus(j.id, '笔试已完成');
+    } else if (action === 'exam-fill') {
+      // 「去补时间」：打开编辑表单（已经在待笔试状态）
+      openForm(j);
+    } else if (action === 'exam-next') {
+      // 「笔试已完成 / → 进入一面」：一键跳到指定状态
+      var next = btn.getAttribute('data-next');
+      if (next && STATUSES.indexOf(next) >= 0) setStatus(j.id, next);
+    } else if (action === 'edit') {
+      openForm(j);
+    } else if (action === 'delete') {
+      if (confirm('确定删除「' + j.company + ' - ' + j.position + '」？此操作不可撤销。')) {
+        jobs = jobs.filter(function (x) { return x.id !== j.id; });
+        saveJobs();
+        refreshAll();
+      }
+    }
+  }
+
+  /* ---------- v11 看板：状态徽章下拉 + 备注 inline 编辑 ---------- */
+  function openStatusDropdown(anchor, j) {
+    closeStatusDropdown();
+    var dd = document.createElement('div');
+    dd.className = 'status-dropdown';
+    dd.id = 'statusDropdown';
+    dd.setAttribute('data-id', j.id);
+    STATUSES.forEach(function (s) {
+      var opt = document.createElement('div');
+      opt.className = 'opt' + (s === j.status ? ' current' : '');
+      opt.innerHTML = '<span class="dot" style="background:' + (STATUS_COLOR[s] || '#C9CDD4') + '"></span>' + esc(s);
+      opt.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (s !== j.status) {
+          setStatus(j.id, s);
+        }
+        closeStatusDropdown();
+      });
+      dd.appendChild(opt);
+    });
+    // 定位（卡片右上角）
+    var r = anchor.getBoundingClientRect();
+    dd.style.position = 'fixed';
+    dd.style.top = (r.bottom + 4) + 'px';
+    dd.style.left = Math.max(8, Math.min(window.innerWidth - 160, r.right - 160)) + 'px';
+    document.body.appendChild(dd);
+    // 外部点击关闭
+    setTimeout(function () {
+      document.addEventListener('click', closeStatusDropdown, { once: true });
+    }, 0);
+  }
+  function closeStatusDropdown() {
+    var dd = $('statusDropdown');
+    if (dd) dd.remove();
+  }
+
+  function startNoteEdit(anchor, j) {
+    // 把 note-inline 替换成 textarea
+    var ta = document.createElement('textarea');
+    ta.className = 'note-input';
+    ta.value = j.note || '';
+    ta.rows = 2;
+    ta.setAttribute('data-id', j.id);
+    anchor.classList.add('editing');
+    anchor.innerHTML = '';
+    anchor.appendChild(ta);
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+    // 自动撑高
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+    ta.addEventListener('input', function () {
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 'px';
+    });
+    var done = function (commit) {
+      if (commit) {
+        var v = ta.value.trim();
+        if (v !== (j.note || '')) {
+          j.note = v;
+          j.lastUpdate = todayStr();
+          saveJobs();
+        }
+      }
+      anchor.classList.remove('editing');
+      // 不刷新整个看板（保持滚动位置）；只更新本卡片
+      anchor.classList.toggle('empty', !j.note);
+      anchor.textContent = j.note || '点此添加备注…';
+    };
+    ta.addEventListener('blur', function () { done(true); });
+    ta.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); done(false); }
+      else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); ta.blur(); }
+    });
+    // 点 textarea 内部不冒泡触发 onAction
+    ta.addEventListener('click', function (e) { e.stopPropagation(); });
+  }
+
+  /* ---------- 简历工坊 ---------- */
+  function onSaveResume() {
+    var v = $('resumeText').value;
+    saveJSON(RESUME_KEY, v);
+    scheduleCloudPush();
+    alert(v.trim() ? '简历已保存（' + v.length + ' 字）' : '已清空简历');
+    renderResumeTab();
+  }
+  function onUploadResume(e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      $('resumeText').value = String(reader.result || '');
+      saveJSON(RESUME_KEY, $('resumeText').value);
+      renderResumeTab();
+      alert('已读取 ' + f.name);
+    };
+    reader.readAsText(f, 'utf-8');
+    this.value = '';
+  }
+  function onAnalyze() {
+    var resume = loadJSON(RESUME_KEY, '');
+    if (!resume.trim()) {
+      // 软提示：不阻塞，给出引导
+      if (!confirm('尚未保存简历，将无法做关键词匹配分析。\n\n点「确定」直接进入岗位库浏览，点「取消」回简历工坊粘贴简历。')) {
+        return;
+      }
+    }
+    var lower = resume.toLowerCase();
+    var results = [];
+    jobs.forEach(function (j) {
+      var r = analyzeJob(j, lower);
+      if (r) results.push({ j: j, r: r });
+    });
+    if (!results.length) {
+      $('analyzeResult').innerHTML = '<div class="empty">没有可分析的岗位 JD（关键词未命中）。把简历和岗位发给 AI 做深度分析更准。</div>';
+      return;
+    }
+    results.sort(function (a, b) { return b.r.score - a.r.score; });
+    var html = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'
+      + '<button class="btn sm primary" id="btnApplyMatch">把关键词匹配度写入岗位库</button>'
+      + '<span class="hint" style="font-size:11px;color:#8A9099;align-self:center">共分析 ' + results.length + ' 个岗位，按匹配度排序（当前岗位库已带 AI 深度匹配标注，写入会覆盖，请酌情使用）</span></div>';
+    results.slice(0, 20).forEach(function (x) {
+      var lv = levelOf(x.r.score);
+      var pct = Math.round(x.r.score * 100);
+      html += '<div class="match-row"><div class="top">'
+        + '<span class="pct">' + pct + '%</span>'
+        + '<span class="score-bar"><i style="width:' + pct + '%;background:' + MATCH_COLOR[lv] + '"></i></span>'
+        + '<span class="badge" style="background:' + MATCH_COLOR[lv] + '1A;color:' + MATCH_COLOR[lv] + '">' + lv + '</span>'
+        + '<span style="font-size:13px;font-weight:600">' + esc(x.j.company) + ' · ' + esc(x.j.position) + '</span>'
+        + '<span class="chip">' + esc(x.j.status) + '</span>'
+        + '</div><div class="kw-wrap">'
+        + x.r.matched.slice(0, 10).map(function (k) { return '<span class="chip green">' + esc(k) + '</span>'; }).join('')
+        + (x.r.missing.length ? x.r.missing.slice(0, 8).map(function (k) { return '<span class="chip gray">' + esc(k) + '</span>'; }).join('') : '')
+        + '</div></div>';
+    });
+    if (results.length > 20) html += '<div class="empty" style="padding:8px">其余 ' + (results.length - 20) + ' 个岗位匹配度较低，可在岗位库中查看</div>';
+    $('analyzeResult').innerHTML = html;
+    $('btnApplyMatch').addEventListener('click', function () {
+      var n = 0;
+      results.forEach(function (x) { x.j.match = levelOf(x.r.score); x.j.matchNote = '本页关键词匹配 ' + Math.round(x.r.score * 100) + '%（覆盖了 AI 深度标注）'; n++; });
+      saveJobs();
+      refreshAll();
+      alert('已更新 ' + n + ' 个岗位的匹配度（可在岗位库按匹配度筛选）');
+    });
+  }
+  function onTailorSelect() {
+    state.tailorId = $('tailorSelect').value;
+    var tailored = loadJSON(TAILORED_KEY, {});
+    $('tailorText').value = tailored[state.tailorId] || '';
+    $('suggestBox').style.display = 'none';
+    renderTailorInfo();
+  }
+  function onSaveTailor() {
+    if (!state.tailorId) { alert('请先选择岗位'); return; }
+    var tailored = loadJSON(TAILORED_KEY, {});
+    tailored[state.tailorId] = $('tailorText').value;
+    saveJSON(TAILORED_KEY, tailored);
+    scheduleCloudPush();
+    alert('该岗位的定制简历已保存');
+  }
+  function buildSuggest() {
+    var j = state.tailorId ? findJob(state.tailorId) : null;
+    if (!j) return '';
+    var resume = loadJSON(RESUME_KEY, '');
+    var r = resume ? analyzeJob(j, resume.toLowerCase()) : null;
+    var lines = [];
+    lines.push('【岗位】' + j.company + ' · ' + j.position);
+    if (j.deadline) lines.push('【截止】' + j.deadline);
+    lines.push('');
+    lines.push('【JD 原文】');
+    lines.push(j.jd || '（无 JD，建议先补充）');
+    lines.push('');
+    if (r) {
+      lines.push('【简历已覆盖的 JD 关键词】' + (r.matched.join('、') || '无'));
+      lines.push('【JD 要求但简历未体现】' + (r.missing.join('、') || '无'));
+      lines.push('');
+    }
+    lines.push('【定制原则】');
+    lines.push('1. 只基于真实经历调整，绝不编造经历、数据或技能');
+    lines.push('2. 按 JD 的要求顺序重组简历模块，最相关的实习/项目放最前');
+    lines.push('3. 用「动词 + 做了什么 + 量化结果」改写与 JD 相关的经历描述');
+    lines.push('4. 技能栏对齐 JD 关键词（仅限真实掌握的）');
+    lines.push('5. 删减与该岗位无关的内容，控制在一页');
+    return lines.join('\n');
+  }
+  function onGenSuggest() {
+    if (!state.tailorId) { alert('请先选择岗位'); return; }
+    $('suggestBox').textContent = buildSuggest();
+    $('suggestBox').style.display = 'block';
+  }
+  function buildPrompt() {
+    var j = state.tailorId ? findJob(state.tailorId) : null;
+    if (!j) return '';
+    var resume = loadJSON(RESUME_KEY, '');
+    return '请基于我的真实经历，针对以下岗位定制修改我的简历。要求：贴合岗位但不编造，'
+      + '调整经历描述的侧重与顺序，突出与 JD 相关的成果并尽量量化；没有相关经历的部分不要硬凑。\n\n'
+      + '【岗位】' + j.company + ' · ' + j.position + '\n'
+      + '【JD】\n' + (j.jd || '（见岗位库）') + '\n\n'
+      + '【我的简历】\n' + (resume || '（我会单独发给你）');
+  }
+  function copyText(text, okMsg) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { alert(okMsg); }, function () { fallbackCopy(text, okMsg); });
+    } else fallbackCopy(text, okMsg);
+  }
+  function fallbackCopy(text, okMsg) {
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); alert(okMsg); } catch (e) { alert('复制失败，请手动复制建议框内容'); }
+    document.body.removeChild(ta);
+  }
+  function onCopyPrompt() {
+    if (!state.tailorId) { alert('请先选择岗位'); return; }
+    copyText(buildPrompt(), '定制请求已复制。回到 AI 对话粘贴发送，即可获得基于真实经历的针对性修改');
+  }
+
+  /* ---------- API 设置与外部调用 ---------- */
+  var SETTINGS_KEY = 'wb_campus27_settings';
+  function getSettings() { return loadJSON(SETTINGS_KEY, {}) || {}; }
+  var DEFAULT_LLM_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+  var DEFAULT_LLM_MODEL = 'qwen-plus';
+  /* Tavily 搜索 Key 不随公开仓库分发：请在本页「设置 - API 设置」中自行填入你的 Key（免费档 1000 次/月）。
+     填入后存于浏览器本地，不会上传到任何服务器。 */
+  var DEFAULT_SEARCH_PROVIDER = 'tavily';
+  var DEFAULT_SEARCH_KEY = '';
+  function effectiveSearch() {
+    var s = getSettings();
+    return {
+      provider: s.searchProvider || DEFAULT_SEARCH_PROVIDER,
+      key: s.searchKey || DEFAULT_SEARCH_KEY
+    };
+  }
+  function openSettings() {
+    var s = getSettings();
+    $('setLlmUrl').value = s.llmUrl || DEFAULT_LLM_URL;
+    $('setLlmModel').value = s.llmModel || DEFAULT_LLM_MODEL;
+    $('setLlmKey').value = s.llmKey || '';
+    $('setSearchProvider').value = s.searchProvider || DEFAULT_SEARCH_PROVIDER;
+    $('setSearchKey').value = s.searchKey || DEFAULT_SEARCH_KEY;
+    $('settingsOverlay').classList.add('show');
+  }
+  function saveSettingsFromForm() {
+    saveJSON(SETTINGS_KEY, {
+      llmUrl: $('setLlmUrl').value.trim(),
+      llmModel: $('setLlmModel').value.trim(),
+      llmKey: $('setLlmKey').value.trim(),
+      searchProvider: $('setSearchProvider').value,
+      searchKey: $('setSearchKey').value.trim()
+    });
+    $('settingsOverlay').classList.remove('show');
+    alert('API 设置已保存（仅存在本机浏览器）');
+  }
+
+  function callLLM(messages, onDone, onErr) {
+    var s = getSettings();
+    var url = s.llmUrl || DEFAULT_LLM_URL;
+    var model = s.llmModel || DEFAULT_LLM_MODEL;
+    if (!url || !s.llmKey || !model) { onErr('请先点「API 设置」，把阿里云百炼的 API Key 粘贴到「LLM - API Key」一格即可（其余已默认配好）'); return; }
+    var base = url.replace(/\/+$/, '');
+    fetch(base + '/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + s.llmKey },
+      body: JSON.stringify({ model: model, messages: messages, temperature: 0.3 })
+    }).then(function (r) {
+      if (!r.ok) return r.text().then(function (t) { throw new Error('HTTP ' + r.status + (t ? ' - ' + t.slice(0, 120) : '')); });
+      return r.json();
+    }).then(function (d) {
+      var txt = d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content;
+      if (!txt) throw new Error('返回内容为空');
+      onDone(txt);
+    }).catch(function (e) {
+      onErr('LLM 调用失败：' + e.message + '。若为 Failed to fetch，多为该服务商不允许浏览器直连（CORS），可换一家服务商再试。');
+    });
+  }
+
+  function callSearch(query, onDone, onErr) {
+    var cfg = effectiveSearch();
+    if (!cfg.key) { onErr('请先点「API 设置」配置搜索服务 Key（博查或 Tavily）'); return; }
+    var pr;
+    if (cfg.provider === 'tavily') {
+      pr = fetch('https://api.tavily.com/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ api_key: cfg.key, query: query, max_results: 10, search_depth: 'basic' })
+      }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (d) {
+          return (d.results || []).map(function (x) { return { title: x.title, url: x.url, snippet: x.content || '' }; });
+        });
+    } else {
+      pr = fetch('https://api.bochaai.com/v1/web-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.key },
+        body: JSON.stringify({ query: query, count: 10, summary: true })
+      }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (d) {
+          var pages = (d && d.data && d.data.webPages && d.data.webPages.value) || [];
+          return pages.map(function (x) { return { title: x.name, url: x.url, snippet: x.summary || x.snippet || '' }; });
+        });
+    }
+    pr.then(onDone).catch(function (e) {
+      onErr('搜索失败：' + e.message + '。请检查 Key 是否有效；若为 Failed to fetch，多为网络或该服务商不允许浏览器直连（CORS）。');
+    });
+  }
+
+  /* ---------- 抓取新岗位 ---------- */
+  var fetchedJobs = [];
+  function onFetch() {
+    var q = $('fetchQuery').value.trim();
+    if (!q) { alert('请输入搜索关键词，如「2027届 银行 秋招」'); return; }
+    var st = $('fetchStatus'), res = $('fetchResult');
+    fetchedJobs = [];
+    res.innerHTML = '';
+    st.textContent = '正在搜索…（依赖搜索 API，若失败请检查设置）';
+    callSearch(q, function (items) {
+      if (!items.length) { st.textContent = '搜索无结果，换个关键词试试（如加上「网申」「官网」）'; return; }
+      st.textContent = '搜到 ' + items.length + ' 条结果，正在用 AI 解析岗位信息…';
+      var payload = items.map(function (x, i) {
+        return '[' + (i + 1) + '] ' + x.title + '\n' + x.url + '\n' + String(x.snippet || '').slice(0, 600);
+      }).join('\n\n');
+      var sys = '你是校园招聘信息解析助手。从搜索结果中提取「2027届/27届校园招聘或应届生岗位」。要求：'
+        + '1) 只输出严格合法的 JSON 数组，不要任何解释文字或代码块标记；'
+        + '2) 每项格式 {"company":"公司名","position":"岗位名","url":"投递或公告链接","jd":"职责与要求摘要(200字内)","deadline":"YYYY-MM-DD或空字符串","sourceTitle":"来源标题"}；'
+        + '3) deadline 只在结果中明确写了截止日期时才填，没有就留空字符串，禁止猜测；'
+        + '4) 与校园招聘/应届生岗位无关的结果直接丢弃；'
+        + '5) 一条结果里含多个岗位时拆成多项。';
+      var user = '搜索关键词：' + q + '\n\n搜索结果：\n' + payload;
+      callLLM([{ role: 'system', content: sys }, { role: 'user', content: user }], function (txt) {
+        var m = txt.match(/\[[\s\S]*\]/);
+        if (!m) { st.textContent = 'AI 返回格式异常（未找到 JSON），请重试或换更具体的关键词'; return; }
+        var arr;
+        try { arr = JSON.parse(m[0]); } catch (e) { st.textContent = 'AI 返回的 JSON 解析失败，请重试'; return; }
+        var exist = {};
+        jobs.forEach(function (j) { exist[j.company + '|' + j.position] = true; });
+        var seen = {};
+        fetchedJobs = [];
+        arr.forEach(function (x) {
+          if (!x || !x.company || !x.position) return;
+          var k = x.company + '|' + x.position;
+          if (exist[k]) x._dup = true;
+          seen[k] = true;
+          fetchedJobs.push(x);
+        });
+        renderFetchPreview();
+        st.textContent = fetchedJobs.length
+          ? '解析完成：' + fetchedJobs.length + ' 个岗位（灰色的已在岗位库，不会重复导入）。导入后请逐个核实截止时间与投递链接。'
+          : '这批结果里没有识别出新的校招岗位，换个关键词试试';
+      }, function (msg) { st.textContent = msg; });
+    }, function (msg) { st.textContent = msg; });
+  }
+  function renderFetchPreview() {
+    if (!fetchedJobs.length) { $('fetchResult').innerHTML = ''; return; }
+    var html = '<div style="display:flex;gap:8px;margin:10px 0;flex-wrap:wrap">'
+      + '<button class="btn sm primary" id="btnImportFetched">导入勾选的岗位</button>'
+      + '<button class="btn sm" id="btnSelectAllFetched">全选 / 反选</button></div>';
+    fetchedJobs.forEach(function (x, i) {
+      html += '<div class="fetch-item"' + (x._dup ? ' style="opacity:.55"' : '') + '>'
+        + '<input type="checkbox" data-fi="' + i + '"' + (x._dup ? ' disabled' : ' checked') + '>'
+        + '<div style="flex:1;min-width:180px"><div style="font-weight:600;font-size:13px">' + esc(x.company) + ' · ' + esc(x.position)
+        + (x._dup ? ' <span class="chip gray">已存在</span>' : '') + '</div>'
+        + (x.deadline ? '<div class="hint" style="font-size:11px;color:#8A9099;margin-top:2px">截止 ' + esc(x.deadline) + '</div>' : '')
+        + (x.jd ? '<div style="font-size:12px;color:#5A6068;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + esc(x.jd) + '</div>' : '')
+        + (x.sourceTitle ? '<div class="hint" style="font-size:11px;color:#8A9099;margin-top:2px">来源：' + esc(x.sourceTitle) + '</div>' : '')
+        + '</div>'
+        + (x.url && /^https?:\/\//i.test(x.url) ? '<a class="link-btn" href="' + esc(x.url) + '" target="_blank" rel="noopener">查看原文</a>' : '')
+        + '</div>';
+    });
+    $('fetchResult').innerHTML = html;
+    $('btnImportFetched').addEventListener('click', onImportFetched);
+    $('btnSelectAllFetched').addEventListener('click', function () {
+      var boxes = $('fetchResult').querySelectorAll('input[type="checkbox"]:not(:disabled)');
+      var allChecked = true;
+      boxes.forEach(function (b) { if (!b.checked) allChecked = false; });
+      boxes.forEach(function (b) { b.checked = !allChecked; });
+    });
+  }
+  function onImportFetched() {
+    var added = 0;
+    $('fetchResult').querySelectorAll('input[type="checkbox"]').forEach(function (b) {
+      if (!b.checked || b.disabled) return;
+      var x = fetchedJobs[parseInt(b.getAttribute('data-fi'), 10)];
+      if (!x) return;
+      jobs.push({
+        id: uid(), company: String(x.company).trim(), position: String(x.position).trim(),
+        url: /^https?:\/\//i.test(x.url || '') ? x.url : (x.url || ''),
+        jd: x.jd || '',
+        deadline: /^\d{4}-\d{2}-\d{2}$/.test(x.deadline || '') ? x.deadline : '',
+        tags: ['AI抓取', '待核实'], match: '未评', status: '待投递',
+        appliedDate: '', lastUpdate: '', createdAt: todayStr(),
+        note: '来源：' + (x.sourceTitle || 'AI 抓取') + '，截止时间待核实', source: 'AI抓取'
+      });
+      added++;
+    });
+    if (added) { saveJobs(); refreshAll(); }
+    fetchedJobs = [];
+    $('fetchResult').innerHTML = '';
+    $('fetchStatus').textContent = '已导入 ' + added + ' 个岗位（已标记「AI抓取·待核实」，请到岗位库核实截止时间与链接，确认后再投递）';
+  }
+
+  /* ---------- AI 一键定制简历 ---------- */
+  function onAiTailor() {
+    if (!state.tailorId) { alert('请先选择要定制的岗位'); return; }
+    var j = findJob(state.tailorId);
+    if (!j) return;
+    // v11：不再强求"先保存简历"。优先用已保存简历；没有就让用户临时粘贴。
+    var resume = loadJSON(RESUME_KEY, '');
+    var adHoc = $('adhocResumeText') ? $('adhocResumeText').value.trim() : '';
+    var source = adHoc || resume;
+    if (!source) {
+      // 弹一个小输入框（不阻塞的方式）
+      var v = prompt('请粘贴你的原简历（Markdown/纯文本均可）：');
+      if (!v || !v.trim()) { alert('未提供简历，无法定制'); return; }
+      source = v.trim();
+      // 缓存到 ad-hoc，下次还能用
+      var adhocEl = $('adhocResumeText');
+      if (adhocEl) adhocEl.value = source;
+    }
+    var st = $('aiTailorStatus');
+    st.textContent = 'AI 正在定制…（约需十几秒，请勿关闭页面）';
+    // v11 prompt：强化"严格保留原格式"
+    var sys = '你是资深简历顾问。基于求职者的真实经历，针对目标岗位定制简历。铁律：'
+      + '1) 绝不编造任何经历、数据、技能、证书；'
+      + '2) 严格保留用户原简历的格式与结构：所有 Markdown 段落分隔、空行、列表符号（- / 1. / • / ※ 等）、小节标题（## / ==xxx== 等）、缩进都不要改变，只调整内容措辞、顺序和详略；'
+      + '3) 只调整模块顺序、内容侧重和措辞，突出与 JD 相关的真实成果；'
+      + '4) 用「动词 + 做了什么 + 量化结果」改写与 JD 相关的经历描述；'
+      + '5) 技能栏只列真实掌握且与 JD 相关的技能；'
+      + '6) 删减与该岗位无关的内容，控制篇幅；'
+      + '7) 输出完整定制版简历全文（保留原格式），最后单独一节「【定制说明】」简述改了什么、为什么。';
+    var user = '【目标岗位】' + j.company + ' · ' + j.position + '\n【岗位 JD】\n' + (j.jd || '（无 JD，请按岗位名称合理理解）') + '\n\n【我的简历原文】\n' + source;
+    callLLM([{ role: 'system', content: sys }, { role: 'user', content: user }], function (txt) {
+      $('tailorText').value = txt;
+      st.textContent = '已生成，请人工审核后点「保存定制版」——务必确认没有编造内容再使用';
+    }, function (msg) { st.textContent = msg; });
+  }
+  function onCopyMatchAsk() {
+    var resume = loadJSON(RESUME_KEY, '');
+    if (!String(resume).trim()) { alert('请先在「简历工坊」保存简历（或直接粘到 AI 对话里更省事）'); return; }
+    var list = jobs.map(function (j) { return '- ' + j.company + ' | ' + j.position + ' | 当前标注：' + (j.match || '未评'); }).join('\n');
+    copyText('请基于我的简历，对以下岗位逐个评估匹配度（高/中/低 + 一句话理由），严格输出 JSON 数组，格式 [{"company":"","position":"","match":"高|中|低","reason":""}]，不要输出其他内容：\n\n【我的简历】\n' + resume + '\n\n【岗位列表】\n' + list, '已复制。粘到 AI 对话发送，得到结果后可让我批量更新岗位库匹配标注');
+  }
+
+  /* ---------- 备份 ---------- */
+  function exportJSON() {
+    var payload = {
+      app: 'campus27-workbench', version: 2, exportedAt: new Date().toISOString(),
+      jobs: jobs, resume: loadJSON(RESUME_KEY, ''), tailored: loadJSON(TAILORED_KEY, {})
+    };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'campus27-backup-' + todayStr() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+  function importJSON(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var data = JSON.parse(reader.result);
+        var arr = Array.isArray(data) ? data : (data.jobs || []);
+        if (!Array.isArray(arr)) { alert('文件里没有可导入的岗位数据'); return; }
+        var exist = {};
+        jobs.forEach(function (j) { exist[j.id] = true; exist[j.company + '|' + j.position] = true; });
+        var added = 0;
+        arr.forEach(function (j) {
+          if (j && j.company && j.position && !exist[j.id] && !exist[j.company + '|' + j.position]) { jobs.push(j); added++; }
+        });
+        if (data.resume) saveJSON(RESUME_KEY, data.resume);
+        if (data.tailored) {
+          var t = loadJSON(TAILORED_KEY, {});
+          Object.keys(data.tailored).forEach(function (k) { t[k] = data.tailored[k]; });
+          saveJSON(TAILORED_KEY, t);
+        }
+        saveJobs();
+        refreshAll();
+        alert('导入完成：新增 ' + added + ' 条，跳过已有 ' + (arr.length - added) + ' 条');
+      } catch (err) {
+        alert('导入失败：文件不是有效的 JSON 备份');
+      }
+    };
+    reader.readAsText(file);
+  }
+  function clearAll() {
+    if (!jobs.length) { alert('当前没有数据'); return; }
+    if (confirm('⚠️ 此操作将清空全部 ' + jobs.length + ' 条岗位数据且不可恢复！\n建议先点「导出备份」。确定继续吗？')) {
+      if (confirm('再次确认：真的要清空全部数据吗？')) {
+        jobs = [];
+        saveJobs();
+        refreshAll();
+      }
+    }
+  }
+
+  /* ---------- 云端同步（Supabase REST，可选） ---------- */
+  var SUPABASE_URL = 'https://psvhfgigczykqnzsunpc.supabase.co';
+  var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzdmhmZ2lnY3p5a3FuenN1bnBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1ODUwMTQsImV4cCI6MjEwNDE2MTAxNH0.eg3EKVxIycEwap7ZvlHQKcDyupRGatWH1XoWZMfmvJA';
+  var CLOUD_JOBS_COL = 'campus27_jobs';
+  var CLOUD_KV_COL = 'campus27_kv';
+  var CLOUD_SNAP_KEY = 'wb_campus27_cloudsnap';
+  var cloud = { status: 'off', busy: false, pushTimer: null, snapshot: null };
+
+  function sbFetch(path, opts) {
+    opts = opts || {};
+    var headers = {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+    };
+    if (opts.method === 'POST' || opts.method === 'PATCH') {
+      headers['Content-Type'] = 'application/json';
+      headers['Prefer'] = 'resolution=merge-duplicates';
+    }
+    return fetch(SUPABASE_URL + '/rest/v1/' + path, {
+      method: opts.method || 'GET',
+      headers: headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    }).then(function (res) {
+      if (!res.ok) {
+        return res.text().catch(function () { return ''; }).then(function (t) {
+          throw new Error('HTTP ' + res.status + (t ? '：' + t.slice(0, 120) : ''));
+        });
+      }
+      if (res.status === 204) return {};
+      var len = res.headers.get('content-length');
+      if (len === '0') return {};
+      return res.json().catch(function (err) {
+        throw new Error('解析云端返回失败：' + (err && err.message ? err.message : '返回为空'));
+      });
+    });
+  }
+  function sbErrHint(e) {
+    var m = e.message || String(e);
+    if (m.indexOf('404') >= 0) return '云端数据表尚未创建（campus27_jobs / campus27_kv），请按设置面板里的 SQL 初始化';
+    if (m.indexOf('401') >= 0 || m.indexOf('403') >= 0) return 'Supabase 访问被拒绝（anon key 或表权限问题）';
+    if (m.indexOf('Unexpected end of JSON') >= 0 || m.indexOf('解析云端返回失败') >= 0) return '云端返回为空（通常是 upsert 返回 204，已兼容处理；若持续出现请截图）';
+    if (e instanceof TypeError || m.indexOf('fetch') >= 0 || m.indexOf('NetworkError') >= 0 || m.indexOf('Failed to fetch') >= 0) return '网络无法访问 Supabase（国内网络偶尔不稳，稍后重试）';
+    return m;
+  }
+  function cloudSetStatus(st, msg) {
+    cloud.status = st;
+    cloud.lastMsg = msg || '';
+    var txt = $('cloudStatusTxt');
+    if (!txt) return;
+    var map = {
+      off: '云端未启用', connecting: '连接中…', syncing: '同步中…', ok: '已同步', err: '云端异常·离线'
+    };
+    txt.textContent = map[st] || st;
+    var btn = $('btnCloudStatus');
+    btn.title = (msg ? msg + ' · ' : '') + '点击打开设置';
+    btn.style.borderColor = st === 'err' ? '#F3C2BF' : (st === 'ok' ? '#C6E6D0' : '');
+  }
+  function renderCloudBanner() {
+    var box = $('cloudBanner');
+    if (!box) return;
+    if (cloud.status === 'err') {
+      var detail = cloud.lastMsg ? '原因：' + cloud.lastMsg + '。' : '';
+      var sqlHint = (cloud.lastMsg || '').indexOf('表尚未创建') >= 0 ? '请到 Supabase 控制台 → SQL Editor，粘贴设置面板里的建表 SQL 并运行。' : '恢复网络后点「立即同步」即可补传。';
+      box.innerHTML = '<div class="banner err">云端同步失败，当前为离线模式（本地修改不会丢失）。' + detail + sqlHint
+        + '<button class="btn sm" data-action="dismiss-cloud">知道了</button></div>';
+    } else {
+      box.innerHTML = '';
+    }
+  }
+  function cloudStartup() {
+    cloudSetStatus('connecting');
+    sbFetch(CLOUD_JOBS_COL + '?select=id&limit=1').then(function () {
+      cloudSetStatus('ok', '已连接 Supabase');
+      cloudSync(true);
+    }).catch(function (e) {
+      cloudSetStatus('err', sbErrHint(e));
+      renderCloudBanner();
+    });
+  }
+  function cloudLoadSnapshot() {
+    if (!cloud.snapshot) {
+      var s = loadJSON(CLOUD_SNAP_KEY, null);
+      cloud.snapshot = (s && s.jobs && s.kv) ? s : { jobs: {}, kv: {} };
+    }
+    return cloud.snapshot;
+  }
+  function cloudSaveSnapshot() { saveJSON(CLOUD_SNAP_KEY, cloud.snapshot); }
+  function docToJob(r) {
+    var j = {};
+    var d = r.data || {};
+    for (var k in d) j[k] = d[k];
+    j.id = r.id;
+    if (r.ut) j._ut = r.ut;
+    return j;
+  }
+  /* 快照比对用：排除 _ut 的稳定 JSON（避免时间戳本身造成"永远有差异"） */
+  function jobJson(j) {
+    var c = {};
+    for (var k in j) { if (k !== '_ut') c[k] = j[k]; }
+    return JSON.stringify(c);
+  }
+  function cloudQueryAll() {
+    return sbFetch(CLOUD_JOBS_COL + '?select=*&limit=1000').then(function (rows) {
+      return { data: rows || [] };
+    });
+  }
+  function cloudMergeJobs(remote) {
+    var snap = cloudLoadSnapshot();
+    var changed = false;
+    remote.forEach(function (d) {
+      var local = findJob(d.id);
+      if (d.deleted) {
+        if (local) { jobs = jobs.filter(function (x) { return x.id !== d.id; }); changed = true; }
+        snap.jobs[d.id] = null;
+        return;
+      }
+      var rj = docToJob(d);
+      if (!local) {
+        if (snap.jobs[d.id]) {
+          // 快照里有、本地没有 = 本地已删除，不复活远端旧数据；推送阶段会写墓碑同步删除
+          return;
+        }
+        jobs.push(rj);
+        snap.jobs[d.id] = { json: jobJson(rj) };
+        changed = true;
+      } else if ((d.ut || 0) > (local._ut || 0)) {
+        var idx = jobs.indexOf(local);
+        jobs[idx] = rj;
+        snap.jobs[d.id] = { json: jobJson(rj) };
+        changed = true;
+      }
+      // 本地不旧于云端时保留本地；快照不动，推送阶段会检测到本地改动并上传
+    });
+    return changed;
+  }
+  function cloudMergeKv(remoteKv) {
+    var snap = cloudLoadSnapshot();
+    var changed = false;
+    var keyMap = { resume: RESUME_KEY, tailored: TAILORED_KEY };
+    var defMap = { resume: '', tailored: {} };
+    remoteKv.forEach(function (d) {
+      var name = d.k;
+      if (!keyMap[name]) return;
+      var localVal = loadJSON(keyMap[name], defMap[name]);
+      var known = snap.kv[name];
+      var remoteNewer = !known || (d.ut || 0) > (known.ut || 0);
+      var localChanged = known && JSON.stringify(localVal) !== known.json;
+      if (remoteNewer && d.v !== undefined && !localChanged) {
+        saveJSON(keyMap[name], d.v);
+        snap.kv[name] = { json: JSON.stringify(d.v), ut: d.ut || 0 };
+        changed = true;
+      } else if (remoteNewer && localChanged && d.v !== undefined) {
+        // 双方都改了：以云端为准，避免覆盖他人成果；本地旧版本可通过导出备份找回
+        saveJSON(keyMap[name], d.v);
+        snap.kv[name] = { json: JSON.stringify(d.v), ut: d.ut || 0 };
+        changed = true;
+      }
+    });
+    return changed;
+  }
+  function cloudSync(isStartup) {
+    if (cloud.status !== 'ok' && cloud.status !== 'syncing') return;
+    if (cloud.busy) return;
+    cloud.busy = true;
+    cloudSetStatus('syncing');
+    cloudLoadSnapshot();
+    Promise.all([
+      cloudQueryAll().catch(function (e) { throw new Error(sbErrHint(e)); }),
+      sbFetch(CLOUD_KV_COL + '?select=*&limit=100').catch(function () { return []; })
+    ]).then(function (rs) {
+      var changed = cloudMergeJobs(rs[0].data || []);
+      changed = cloudMergeKv(rs[1] || []) || changed;
+      if (changed) { saveJSON(STORAGE_KEY, jobs); refreshAll(); }
+      return cloudPushDiff();
+    }).then(function () {
+      cloudSaveSnapshot();
+      cloudSetStatus('ok', '上次同步 ' + new Date().toTimeString().slice(0, 5));
+      cloud.busy = false;
+    }).catch(function (e) {
+      cloud.busy = false;
+      cloudSetStatus('err', e.message || '同步失败');
+      renderCloudBanner();
+    });
+  }
+  function cloudPushDiff() {
+    var snap = cloudLoadSnapshot();
+    var now = Date.now();
+    var seq = 0;
+    var chain = Promise.resolve();
+    jobs.forEach(function (j) {
+      var json = jobJson(j);
+      if (!snap.jobs[j.id] || snap.jobs[j.id].json !== json) {
+        if (!j._ut) j._ut = now + (++seq);
+        var payload = { id: j.id, data: {}, ut: j._ut, deleted: false };
+        for (var k in j) { if (k !== '_ut') payload.data[k] = j[k]; }
+        var jid = j.id;
+        chain = chain.then(function () {
+          return sbFetch(CLOUD_JOBS_COL, { method: 'POST', body: [payload] });
+        });
+        snap.jobs[jid] = { json: json };
+      }
+    });
+    Object.keys(snap.jobs).forEach(function (id) {
+      if (snap.jobs[id] && !findJob(id)) {
+        var tid = id;
+        chain = chain.then(function () {
+          return sbFetch(CLOUD_JOBS_COL, { method: 'POST', body: [{ id: tid, data: {}, ut: now + 10000, deleted: true }] });
+        });
+        delete snap.jobs[tid];
+      }
+    });
+    var kvMap = { resume: loadJSON(RESUME_KEY, ''), tailored: loadJSON(TAILORED_KEY, {}) };
+    Object.keys(kvMap).forEach(function (name) {
+      var json = JSON.stringify(kvMap[name]);
+      if (!snap.kv[name] || snap.kv[name].json !== json) {
+        var ut = now + 20000;
+        var val = kvMap[name];
+        chain = chain.then(function () {
+          return sbFetch(CLOUD_KV_COL, { method: 'POST', body: [{ k: name, v: val, ut: ut }] });
+        });
+        snap.kv[name] = { json: json, ut: ut };
+      }
+    });
+    return chain;
+  }
+  function scheduleCloudPush() {
+    if (cloud.status !== 'ok' || cloud.busy) return;
+    if (cloud.pushTimer) clearTimeout(cloud.pushTimer);
+    cloud.pushTimer = setTimeout(function () { cloudSync(); }, 3000);
+  }
+  function cloudDisconnect() {
+    if (cloud.pushTimer) clearTimeout(cloud.pushTimer);
+    cloud.busy = false; cloud.snapshot = null;
+    cloudSetStatus('off');
+    renderCloudBanner();
+  }
+
+  function switchTab(tab) {
+    state.tab = tab;
+    document.querySelectorAll('nav.tabs button').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-tab') === tab);
+    });
+    document.querySelectorAll('.view').forEach(function (v) {
+      v.classList.toggle('active', v.id === 'view-' + tab);
+    });
+  }
+
+  function init() {
+    var sf = $('statusFilter');
+    STATUSES.forEach(function (s) {
+      var o = document.createElement('option'); o.textContent = s; sf.appendChild(o);
+    });
+    var fs = $('fStatus');
+    STATUSES.forEach(function (s) {
+      var o = document.createElement('option'); o.textContent = s; fs.appendChild(o);
+    });
+
+    bootstrapJobs();
+
+    document.querySelectorAll('nav.tabs button').forEach(function (b) {
+      b.addEventListener('click', function () { switchTab(b.getAttribute('data-tab')); });
+    });
+    $('btnAdd').addEventListener('click', function () { openForm(null); });
+    $('btnCancel').addEventListener('click', closeForm);
+    $('formOverlay').addEventListener('click', function (e) { if (e.target === this) closeForm(); });
+    $('jobForm').addEventListener('submit', onFormSubmit);
+    $('btnSmartParse').addEventListener('click', onSmartParse);
+    $('btnExport').addEventListener('click', exportJSON);
+    $('btnImport').addEventListener('click', function () { $('fileImport').click(); });
+    $('fileImport').addEventListener('change', function () {
+      if (this.files && this.files[0]) importJSON(this.files[0]);
+      this.value = '';
+    });
+    $('btnClearAll').addEventListener('click', clearAll);
+    $('searchInput').addEventListener('input', function () { state.search = this.value; renderList(); });
+    $('statusFilter').addEventListener('change', function () { state.statusFilter = this.value; renderList(); });
+    $('matchFilter').addEventListener('change', function () { state.matchFilter = this.value; renderList(); });
+
+    $('btnSaveResume').addEventListener('click', onSaveResume);
+    $('btnUploadResume').addEventListener('click', function () { $('fileResume').click(); });
+    $('fileResume').addEventListener('change', onUploadResume);
+    $('btnAnalyze').addEventListener('click', onAnalyze);
+    $('btnCopyMatchAsk').addEventListener('click', onCopyMatchAsk);
+    $('tailorSelect').addEventListener('change', onTailorSelect);
+    $('btnAiTailor').addEventListener('click', onAiTailor);
+    $('btnSaveTailor').addEventListener('click', onSaveTailor);
+    $('btnGenSuggest').addEventListener('click', onGenSuggest);
+    $('btnCopyPrompt').addEventListener('click', onCopyPrompt);
+
+    $('btnSettingsTop').addEventListener('click', openSettings);
+    $('btnOpenSettings').addEventListener('click', openSettings);
+    $('btnCloudStatus').addEventListener('click', openSettings);
+    $('btnCloudSync').addEventListener('click', function () {
+      if (cloud.status === 'ok') { cloudSync(); alert('已发起同步，请看右上角状态'); }
+      else alert('云端未连接：请检查网络后刷新页面重试（云端地址已内置页面，无需配置）');
+    });
+    $('btnCloudDisconnect').addEventListener('click', function () {
+      if (!confirm('断开云端后，本机数据保留但不再同步。确定断开吗？')) return;
+      cloudDisconnect();
+      $('settingsOverlay').classList.remove('show');
+      alert('已断开云端，数据回到本机存储（刷新页面会重新连接）');
+    });
+    $('btnCloseSettings').addEventListener('click', function () { $('settingsOverlay').classList.remove('show'); });
+    $('btnSaveSettings').addEventListener('click', saveSettingsFromForm);
+    $('settingsOverlay').addEventListener('click', function (e) { if (e.target === this) this.classList.remove('show'); });
+    $('btnFetch').addEventListener('click', onFetch);
+
+    document.getElementById('view-list').addEventListener('click', onAction);
+    document.getElementById('view-kanban').addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-action="dismiss-cloud"]');
+      if (btn) { $('cloudBanner').innerHTML = ''; return; }
+      onAction(e);
+    });
+    document.getElementById('view-company').addEventListener('click', onAction);
+    $('coSearch').addEventListener('input', function () { state.coSearch = this.value; renderCompany(); });
+    $('coSort').addEventListener('change', function () { state.coSort = this.value; renderCompany(); });
+
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden && cloud.status === 'ok') cloudSync();
+    });
+
+    cloudSetStatus('connecting');
+    refreshAll();
+    cloudStartup();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>
